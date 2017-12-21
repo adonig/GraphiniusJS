@@ -1,5 +1,17 @@
 "use strict";
 var $SU = require('../utils/structUtils');
+var GPU = require('gpu.js');
+function FloydWarshallGPU(size) {
+    var gpu = new GPU();
+    var opt = {
+        output: [size]
+    };
+    var execFW = gpu.createKernel(function () {
+        return this.thread.x;
+    }, opt);
+    return execFW();
+}
+exports.FloydWarshallGPU = FloydWarshallGPU;
 function initializeDistsWithEdges(graph) {
     var dists = {}, edges = $SU.mergeObjects([graph.getDirEdges(), graph.getUndEdges()]);
     for (var edge in edges) {
@@ -57,7 +69,7 @@ function FloydWarshallArray(graph) {
     return dists;
 }
 exports.FloydWarshallArray = FloydWarshallArray;
-function FloydWarshall(graph) {
+function FloydWarshallDict(graph) {
     if (graph.nrDirEdges() === 0 && graph.nrUndEdges() === 0) {
         throw new Error("Cowardly refusing to traverse graph without edges.");
     }
@@ -79,4 +91,4 @@ function FloydWarshall(graph) {
     }
     return dists;
 }
-exports.FloydWarshall = FloydWarshall;
+exports.FloydWarshallDict = FloydWarshallDict;

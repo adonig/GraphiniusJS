@@ -59,7 +59,7 @@ describe('GRAPH SEARCH Tests - Floyd-Warshall - ', () => {
 	});
 	it('should refuse to compute FW on empty graph', () => {
 		var empty_graph = new $G.BaseGraph("iamempty");
-		expect($FW.FloydWarshall.bind($FW.FloydWarshall, empty_graph)).to.throw(
+		expect($FW.FloydWarshallDict.bind($FW.FloydWarshallDict, empty_graph)).to.throw(
 			"Cowardly refusing to traverse graph without edges.");
 	});
 	it('should refuse to compute FW array on empty graph', () => {
@@ -86,7 +86,7 @@ describe('GRAPH SEARCH Tests - Floyd-Warshall - ', () => {
 			});
 
 			it('should correctly compute distance matrix for graph with normal FW', () => {
-				FW_res = $FW.FloydWarshall(graph_search);
+				FW_res = $FW.FloydWarshallDict(graph_search);
 				let expected_result =
 					{ A: { B: 3, C: 4, D: 1, F: 4, E: 2 },
 					B: { F: 1, C: 1, A: 2, E: 2, D: 3 },
@@ -112,18 +112,12 @@ describe('GRAPH SEARCH Tests - Floyd-Warshall - ', () => {
 				expect(FW_res).to.deep.equal(expected_result);
 			});
 
-			/**
-			 * TODO @Benedikt
-			 */
-			it.skip('should detect a negative cycle', () => {
-
-			});
-
 		});
 
 	});
 
-	describe('FW on several (slightly) larger graphs - ', () => {
+
+	describe.skip('FW on several (slightly) larger graphs - ', () => {
 
 		it('performance test of Floyd Warshal on a ~75 node / ~200 edge graph', () => {
 			let d = +new Date();
@@ -141,7 +135,7 @@ describe('GRAPH SEARCH Tests - Floyd-Warshall - ', () => {
 			let e = +new Date();
 			console.log("Floyd on intermediate graph (246 nodes) with SPs took " + (e-d) + "ms to finish");
 			d = +new Date();
-			FW_res = $FW.FloydWarshall(graph_midsize);
+			FW_res = $FW.FloydWarshallDict(graph_midsize);
 			e = +new Date();
 			console.log("Floyd on intermediate graph(246 nodes, DICT version) took " + (e-d) + "ms to finish");
 			d = +new Date();
@@ -168,6 +162,17 @@ describe('GRAPH SEARCH Tests - Floyd-Warshall - ', () => {
 		});
 	});
 	
+
+	describe.only('Floyd Warshall GPU tests', () => {
+
+		it('Should help me understand how gpu.js works', () => {
+			let size = 1e6;
+			let output = $FW.FloydWarshallGPU(size);
+			expect(output.length).to.equal(size);
+		});
+
+	});
+
 });
 
 

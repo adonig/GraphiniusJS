@@ -745,8 +745,8 @@ declare module 'graphinius/core/Graph' {
 }
 declare module 'graphinius/search/FloydWarshall' {
 	/// <reference path="../../typings/tsd.d.ts" />
-	import * as $G from 'graphinius/core/Graph'; function FloydWarshallAPSP(graph: $G.IGraph): {}; function FloydWarshallArray(graph: $G.IGraph): $G.MinAdjacencyListArray; function FloydWarshall(graph: $G.IGraph): {};
-	export { FloydWarshallAPSP, FloydWarshallArray, FloydWarshall };
+	import * as $G from 'graphinius/core/Graph'; function FloydWarshallGPU(size: number): any; function FloydWarshallAPSP(graph: $G.IGraph): {}; function FloydWarshallArray(graph: $G.IGraph): $G.MinAdjacencyListArray; function FloydWarshallDict(graph: $G.IGraph): {};
+	export { FloydWarshallAPSP, FloydWarshallArray, FloydWarshallDict, FloydWarshallGPU };
 
 }
 declare module 'graphinius/centralities/Betweenness' {

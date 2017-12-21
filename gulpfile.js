@@ -32,7 +32,7 @@ const paths = {
 	tests_eme: ['test/energyminimization/**/*.js'],
 	tests_generators: ['test/generators/**/*.js'],	
 	tests_all: ['test/**/*.js'],
-	git_sources: ['./*', '.gitignore', '.npmignore', '.circleci/*', '!docs', '!node_modules', '!.vscode', '!.idea', '!yarn.lock', '!package-lock.json']
+	git_sources: ['./*', '.gitignore', '.npmignore', '.circleci/*', '!docs', '!node_modules', '!.vscode', '!.idea', '!yarn.lock']
 };
 
 
@@ -99,7 +99,7 @@ gulp.task("tdoc", ['clean'], function() {
 		.pipe(tdoc({
 			module: "commonjs",
 			target: "es5",
-			out: "docs/",
+			out: "doc/",
 			name: "GraphiniusJS"//,
 			//theme: "minimal"
 		}));

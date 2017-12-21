@@ -1,9 +1,5 @@
 {
   "scripts": {
-    "build": "gulp build",
-    "test": "gulp mocha",
-    "clean": "gulp clean",
-    "watch": "gulp watch",
     "postinstall": "node install_dist.js"
   },
   "repository": {
@@ -19,11 +15,16 @@
   "name": "graphinius",
   "version": "0.7.4",
   "description": "Generic graph (analysis) library in Typescript",
-  "main": "./dist/index.js",
+  "main": "./index.js",
   "author": "Bernd Malle",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/cassinius/Graphinius/issues"
+  },
+  "directories": {
+    "dist": "dist",
+    "doc": "doc",
+    "test": "test"
   },
   "homepage": "https://github.com/cassinius/Graphinius#readme",
   "devDependencies": {
@@ -55,7 +56,7 @@
     "xhr-mock": "^1.6.0"
   },
   "dependencies": {
-    "ncp": "^2.0.0",
-    "sylvester": "0.0.21"
+    "gpu.js": "^1.0.0-rc.10",
+    "ncp": "^2.0.0"
   }
 }

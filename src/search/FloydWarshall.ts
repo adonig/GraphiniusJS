@@ -1,11 +1,32 @@
 /// <reference path="../../typings/tsd.d.ts" />
 
 import * as $G from '../core/Graph';
-import * as $SU from '../utils/structUtils'
+import * as $SU from '../utils/structUtils';
+
+// import * as $GPU from '../../node_modules/gpu.js/bin/gpu.js';
+const GPU = require('gpu.js');
+// console.log(GPU);
+
 
 interface FWConfig {
 	directed: boolean;
 }
+
+
+function FloydWarshallGPU(size: number) {
+	const gpu = new GPU();
+	
+	const opt = {
+    output: [size]
+	};
+
+	const execFW = gpu.createKernel(function() {
+    return this.thread.x;
+	}, opt);
+
+	return execFW();
+}
+
 
 
 /**
@@ -115,7 +136,7 @@ function FloydWarshallArray(graph: $G.IGraph) : $G.MinAdjacencyListArray {
  * @returns m*m matrix of values
  * @constructor
  */
-function FloydWarshall(graph: $G.IGraph) : {} {
+function FloydWarshallDict(graph: $G.IGraph) : {} {
 	if ( graph.nrDirEdges() === 0 && graph.nrUndEdges() === 0 ) {
 		throw new Error("Cowardly refusing to traverse graph without edges.");
 	}
@@ -143,5 +164,6 @@ function FloydWarshall(graph: $G.IGraph) : {} {
 
 export {FloydWarshallAPSP, 
 				FloydWarshallArray,
-				FloydWarshall
+				FloydWarshallDict,
+				FloydWarshallGPU
 			};
