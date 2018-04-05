@@ -14,6 +14,7 @@ var KROL = /** @class */ (function () {
         this._graph = new $G.BaseGraph('synth');
     }
     KROL.prototype.generate = function () {
+        // var gen_dims = this._generator.nrNodes();
         var gen_dims = this._genMat[0].length;
         var res_dims = Math.pow(gen_dims, this._cycles + 1);
         for (var index = 0; index < res_dims; index++) {

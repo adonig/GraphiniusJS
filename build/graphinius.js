@@ -59,6 +59,9 @@
 	var structUtils     = __webpack_require__(3);
 	var remoteUtils     = __webpack_require__(17);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> master
 	var callbackUtils   = __webpack_require__(9);
 	var randGen         = __webpack_require__(23);
 	var binaryHeap      = __webpack_require__(13);
@@ -69,6 +72,7 @@
 	var BetweennessCent	= __webpack_require__(28);
 	var PRGauss					= __webpack_require__(30);
 	var PRRandomWalk		= __webpack_require__(32);
+<<<<<<< HEAD
 =======
 	var callbackUtils   = __webpack_require__(8);
 	var randGen         = __webpack_require__(22);
@@ -81,6 +85,10 @@
 	var PRGauss					= __webpack_require__(28);
 	var PRRandomWalk		= __webpack_require__(30);
 	var kronLeskovec		= __webpack_require__(31);
+
+>>>>>>> master
+=======
+	var kronLeskovec		= __webpack_require__(33);
 
 >>>>>>> master
 
@@ -5024,19 +5032,26 @@
 
 
 /***/ }),
-/* 31 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
+	/// <reference path="../../typings/tsd.d.ts" />
+	Object.defineProperty(exports, "__esModule", { value: true });
 	var $G = __webpack_require__(4);
-	var KROL = (function () {
+	var KROL = /** @class */ (function () {
 	    function KROL(config) {
 	        this._config = config || this.prepareKROLStandardConfig();
+	        // this._generator = this._config.generator;
+	        // TODO: use the adjacency matrix form the generator graph
+	        // as soon as the issues from computing the adjacency matrix are fixe
+	        // this._genMat = this._generator.adjListArray();
 	        this._genMat = this._config.genMat;
 	        this._cycles = this._config.cycles;
 	        this._graph = new $G.BaseGraph('synth');
 	    }
 	    KROL.prototype.generate = function () {
+	        // var gen_dims = this._generator.nrNodes();
 	        var gen_dims = this._genMat[0].length;
 	        var res_dims = Math.pow(gen_dims, this._cycles + 1);
 	        for (var index = 0; index < res_dims; index++) {
@@ -5070,8 +5085,20 @@
 	        return true;
 	    };
 	    KROL.prototype.prepareKROLStandardConfig = function () {
+	        // var generator: $G.IGraph = new $G.BaseGraph('generator');
+	        // var node_a = generator.addNodeByID('a');
+	        // var node_b = generator.addNodeByID('b');
+	        // var edge_ab_id: string = node_a.getID() + '_' + node_b.getID();
+	        // var edge_ba_id: string = node_b.getID() + '_' + node_a.getID();
+	        // var edge_aa_id: string = node_a.getID() + '_' + node_a.getID();
+	        // var edge_bb_id: string = node_b.getID() + '_' + node_b.getID();
+	        // generator.addEdgeByID(edge_ab_id, node_a, node_b, {weighted: true, weight: 0.9});
+	        // generator.addEdgeByID(edge_ba_id, node_b, node_a, {weighted: true, weight: 0.5});
+	        // generator.addEdgeByID(edge_aa_id, node_a, node_a, {weighted: true, weight: 0.5});
+	        // generator.addEdgeByID(edge_bb_id, node_b, node_b, {weighted: true, weight: 0.1});
 	        var genMat = [[0.9, 0.5], [0.5, 0.1]];
 	        return {
+	            // generator: generator,
 	            genMat: genMat,
 	            cycles: 5
 	        };
