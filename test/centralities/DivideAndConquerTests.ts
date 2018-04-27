@@ -27,7 +27,7 @@ let graph_search_pos = json.readFromJSONFile(path_search_pos);
 
 describe('test divide and conquer', () => {
 
-  it.only('label partition and frontier-boolean in each nodes features', () => {
+  it('label partition and frontier-boolean in each nodes features', () => {
     let graph = graph_midSizeGraph;
     let parts = $DC.fakePartition(graph);
     $DC.prepareSuperNode(graph, parts);
@@ -40,5 +40,18 @@ describe('test divide and conquer', () => {
     }
   });
 
+  it.only('label partition and frontier-boolean correctly if there are favorite nodes', () => {
+    let graph = graph_midSizeGraph;
+    let parts = $DC.fakePartition(graph);
+    let favs = {"1":1, "2":1, "3":1, "4":1};
+    $DC.prepareSuperNodeWithFavs(graph, parts, favs);
+    let nodes = graph.getNodes();
+    for (let node in nodes){
+      console.log("nodeID: "+nodes[node].getID());
+      console.log("partition nr: "+nodes[node].getFeature("partition"));
+      console.log("frontier node: "+nodes[node].getFeature("frontier"));
+      console.log();
+    }
+  });
 
 });
