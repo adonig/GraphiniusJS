@@ -5,12 +5,12 @@ import * as $N from '../core/Nodes';
 import * as $E from '../core/Edges';
 import * as $P from '../search/PFS';
 import * as $JO from '../search/Johnsons';
+import * as $BF from '../search/BellmanFord';
 import * as $SU from '../utils/structUtils';
 import * as $BH from '../datastructs/binaryHeap';
 
 
 //do a fake partitioning - will be replaced with a real one later
-
 function fakePartition(graph: $G.IGraph): {} {
   let nodes = graph.getNodes();
   let N = Object.keys(nodes).length;
@@ -22,14 +22,14 @@ function fakePartition(graph: $G.IGraph): {} {
   //do the fake partitioning
   for (let node in nodes) {
     let actualNode = nodes[node];
-    if (i <= N / 2 - 1) {
+    if (i++ <= N / 2 - 1) {
       //just putting in a value, will not be used
+      //better use a boolean instead of delete
       part1[actualNode.getID()] = 1;
     }
     else {
       part2[actualNode.getID()] = 1;
     }
-    i++;
   }
 
   result["part1"] = part1;
@@ -38,7 +38,7 @@ function fakePartition(graph: $G.IGraph): {} {
   return result;
 }
 
-
+//TODO: make one function out of these two, targetSet should be a third, optional argument
 function prepareSuperNode(graph: $G.IGraph, partitions: {}) {
   //first label each node with partition number and label as non-frontier
   let i = 0;
@@ -60,14 +60,15 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}) {
     allEdges.push(edge);
   }
 
+  //interSN edges soon get their characteristic tuples
+  let interSNedges = {};
+  //intraSN edges just get their partition number
+  let intraSNedges = {};
+
   for (let edge of allEdges) {
     let ends = edge.getNodes();
     let a_part = ends["a"].getFeatures().partition;
     let b_part = ends["b"].getFeatures().partition;
-    //interSN edges soon get their characteristic tuples
-    let interSNedges = {};
-    //intraSN edges just get their partition number
-    let intraSNedges = {};
 
     //interSN edge
     if (a_part !== b_part) {
@@ -82,11 +83,12 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}) {
       intraSNedges[edge.getID()] = ends["a"].getFeatures().partition;
     }
   }
-  //basically, we are ready to start the Brandes
-  //pack partitions nodes+intraNS edges into separate objects?
-  }
+  //TODO: make sub-dicts in the intraSN edges, sort them according to partition
+  //return value: a dict of nodes and dict of intraSN edges, both sorted by partition and in same order
+  //those sub-dicts will enter the Brandes
+}
 
-//argument "favorites": keys should be the string IDs of the nodes. Values can be node, number, anything, they will not be needed.
+//TODO: favorites should be renamed to targetSet
 function prepareSuperNodeWithFavs(graph: $G.IGraph, partitions: {}, favorites: {}) {
   //first label each node with partition number and label as non-frontier
   let i = 0;
@@ -94,10 +96,13 @@ function prepareSuperNodeWithFavs(graph: $G.IGraph, partitions: {}, favorites: {
     let dict = partitions[part];
     for (let id in dict) {
       //favorite nodes need to be removed from the partitions - they will be supernodes by themselves
-      if (favorites[id] !== undefined) {
+      if (favorites[id] ) {
+        //TODO: instead of using delete, simply set a boolean from true to false (faster than deletion)
         delete dict[id];
         let node: $N.IBaseNode = graph.getNodeById(id);
-        node.setFeatures({ "partition": null, "frontier": false });
+        node.setFeatures({ "partition": i, "frontier": false });
+        i++;
+        continue;
       }
       let node: $N.IBaseNode = graph.getNodeById(id);
       node.setFeatures({ "partition": i, "frontier": false });
@@ -144,16 +149,18 @@ function prepareSuperNodeWithFavs(graph: $G.IGraph, partitions: {}, favorites: {
   }
   //basically, we are ready to start the Brandes
 
-  
+
 }
 
-//reminder: only max 2 frontier nodes per path!
+//TODO: use 1-1 subdict of the nodes and edges that belong to the same partition as arguments
+//these are enough and optimal to make the adjListDict
+//TODO: write such a function that makes the AdjListDict from a node/edge list (easy)
 function BrandesForSuperNode(graph: $G.IGraph, partition: {}) {
-  //do we need these? May not hurt...
+  //TODO: instead of this, check the length of the dict. if length===1, return. 
   if (graph.nrDirEdges() === 0 && graph.nrUndEdges() === 0) {
     throw new Error("Cowardly refusing to traverse graph without edges.");
   }
-  //do we need these? May not hurt...
+  //TODO (my suggestion): delete these from here. If the graph needs reweighing, do it first thing before the partitioning. 
   if (graph.hasNegativeEdge()) {
     var extraNode: $N.IBaseNode = new $N.BaseNode("extraNode");
     graph = $JO.addExtraNandE(graph, extraNode);
@@ -177,9 +184,7 @@ function BrandesForSuperNode(graph: $G.IGraph, partition: {}) {
   //sigma, dist, closedNodes, heap, frontierCrossed (number, initialize to zero, no heap entry from frontier if it is >=2)
   //return value will be a 2-level-dict
 
-
-
-
+  //think about return value...?
 
 }
 

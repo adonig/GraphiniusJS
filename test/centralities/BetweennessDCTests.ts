@@ -2,7 +2,7 @@
 
 import * as fs from 'fs';
 import * as chai from 'chai';
-import * as $DC from '../../src/centralities/DivideConquer';
+import * as $DC from '../../src/centralities/BetweennessDC';
 import * as $G from '../../src/core/Graph';
 import * as $N from '../../src/core/Nodes';
 import * as $E from '../../src/core/Edges';
