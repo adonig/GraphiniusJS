@@ -30,28 +30,31 @@ describe('test divide and conquer', () => {
   it('label partition and frontier-boolean in each nodes features', () => {
     let graph = graph_midSizeGraph;
     let parts = $DC.fakePartition(graph);
-    $DC.prepareSuperNode(graph, parts);
+    let SNresults = $DC.prepareSuperNode(graph, parts);
+    let partitions = SNresults.partitions,
+      intraSNedges = SNresults.intraSNedges;
+    let adjList = $DC.BrandesForSuperNode(partitions[0], intraSNedges[0]);
+    console.log(adjList);
+
+    /*$DC.prepareSuperNode(graph, parts);
     let nodes = graph.getNodes();
     for (let node in nodes){
       console.log("nodeID: "+nodes[node].getID());
       console.log("partition nr: "+nodes[node].getFeature("partition"));
       console.log("frontier node: "+nodes[node].getFeature("frontier"));
-      console.log();
-    }
+      console.log();*/
   });
 
   it.only('label partition and frontier-boolean correctly if there are favorite nodes', () => {
     let graph = graph_midSizeGraph;
+    let targets = { "1": true, "3": true, "5": true };
     let parts = $DC.fakePartition(graph);
-    let favs = {"1":1, "2":1, "3":1, "4":1};
-    $DC.prepareSuperNodeWithFavs(graph, parts, favs);
-    let nodes = graph.getNodes();
-    for (let node in nodes){
-      console.log("nodeID: "+nodes[node].getID());
-      console.log("partition nr: "+nodes[node].getFeature("partition"));
-      console.log("frontier node: "+nodes[node].getFeature("frontier"));
-      console.log();
-    }
-  });
+    let SNresults = $DC.prepareSuperNode(graph, parts, targets);
+    let partitions = SNresults.partitions,
+      intraSNedges = SNresults.intraSNedges;
+    let adjList = $DC.BrandesForSuperNode(partitions[0], intraSNedges[0]);
+    console.log(adjList);
 
+
+  });
 });
