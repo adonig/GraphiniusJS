@@ -61,11 +61,14 @@ function fakePartition(graph: $G.IGraph): {} {
 //LOGIC: partitions are labeled with integers starting with 0. Target nodes, if any, will be labeled as partition -1
 function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: string]: boolean }) {
   //first label each node with partition number and label as non-frontier
+
+
   for (let part in partitions) {
     let dict = partitions[part];
     for (let id in dict) {
       let node: $N.IBaseNode = graph.getNodeById(id);
 
+      //TODO: dont put this info in the features, but into the partitions object!
       //if it is a target node, we set its features accordingly and "remove" it from the partition
       if (targetSet && targetSet[id] !== undefined) {
         partitions[part][id] = false;
@@ -89,8 +92,8 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
   let interSNedges = {};
   //intraSN edges will be sorted smilarly as the nodes in the partitions object
   let intraSNedges = {};
-  for (let key in partitions){
-    intraSNedges[key]={};
+  for (let key in partitions) {
+    intraSNedges[key] = {};
   }
 
   for (let edge of allEdges) {
@@ -107,46 +110,117 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
     }
     //intraSN edge
     else {
-      //a simplified edge object is put in - then in the Brandes everything is there and the whole graph is not needed
-      let edgeInfo = {};
-      edgeInfo["a"] = ends["a"].getID();
-      edgeInfo["b"] = ends["b"].getID();
-      edgeInfo["isDir"] = edge.isDirected();
-      edgeInfo["weight"] = edge.getWeight();
-      intraSNedges[a_part][edge.getID()] = edgeInfo;
+      //only a boolean is put in, later all edge properties can be obtained from the graph object
+      intraSNedges[a_part][edge.getID()] = true;
     }
   }
   return { partitions, intraSNedges, interSNedges };
 }
 
+export interface BrandesHeapEntry {
+  id: string;
+  best: number;
+}
 
-function BrandesForSuperNode(nodeList: {}, edgeList: {}) {
+function BrandesForSuperNode(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
   //first make the adjListDict
   let adjListDict = {};
   for (let key in nodeList) {
-    if (nodeList[key]) {
+    if (nodeList[key] === true) {
       adjListDict[key] = {};
     }
   }
 
   for (let edgeID in edgeList) {
-    let simpleEdge = edgeList[edgeID];
-    adjListDict[simpleEdge.a][simpleEdge.b] = simpleEdge.weight;
-    if (!simpleEdge.isDir) {
-      adjListDict[simpleEdge.b][simpleEdge.a] = simpleEdge.weight;
+    let edge = graph.getEdgeById(edgeID);
+    let ends = edge.getNodes();
+    adjListDict[ends.a.getID()][ends.b.getID()] = edge.getWeight();
+    if (!edge.isDirected) {
+      adjListDict[ends.b.getID()][ends.a.getID()] = edge.getWeight();
     }
   }
 
-  //temporary return statement for testing!
-  return (adjListDict);
+  const evalPriority = (nb: BrandesHeapEntry) => nb.best;
+  const evalObjID = (nb: BrandesHeapEntry) => nb.id;
 
-  //and here comes the Brandes
-  //variables needed: 
-  //source, current, next nodes
-  //sigma, dist, closedNodes, heap, frontierCrossed (number, initialize to zero, no heap entry from frontier if it is >=2)
-  //return value will be a 2-level-dict
+  let v: BrandesHeapEntry,    //parent of w, at least one shortest path between s and w leads through v
+    w: string,     //neighbour of v, lies one edge further than v from s, type id nodeID, alias string (got from AdjListDict)
+    frontierCounter: number,
+    sigma: { [key: string]: { [key: string]: number } } = {}, //number of shortest paths from source s to each node as goal node
+    dist: { [key: string]: { [key: string]: number } } = {},  //distances from source node s to each node
+    closedNodes: { [key: string]: { [key: string]: boolean } } = {},
+    Q: $BH.BinaryHeap = new $BH.BinaryHeap($BH.BinaryHeapMode.MIN, evalPriority, evalObjID);
 
-  //think about return value...?
+  //eventual target nodes are not represented in the adjListDict, that's why it isbetter to use that instead of the nodeList
+  for (let n in adjListDict) {
+    dist[n] = {};
+    sigma[n] = {};
+    closedNodes[n] = {};
+    for (let nn in adjListDict) {
+      dist[n][nn] = Number.POSITIVE_INFINITY;
+      sigma[n][nn] = 0;
+      closedNodes[n][nn] = false;
+    }
+  }
+
+  for (let s in adjListDict) {
+
+    dist[s][s] = 0;
+    sigma[s][s] = 1;
+    frontierCounter = 0;
+
+    let source: BrandesHeapEntry = { id: s, best: 0 };
+    Q.insert(source);
+    closedNodes[s][s] = true;
+
+    while (Q.size() > 0) {
+
+      v = Q.pop();
+      let current_id = v.id;
+      if (graph.getNodeById(current_id).getFeature("frontier")) {
+        frontierCounter++;
+      }
+
+      closedNodes[s][current_id] = true;
+
+      if (frontierCounter > 2 && graph.getNodeById(current_id).getFeature("frontier")) {
+        continue;
+      }
+
+      let neighbors = adjListDict[current_id];
+      for (let w in neighbors) {
+        console.log("frontier:" + frontierCounter);
+
+
+        if (closedNodes[s][w]) {
+          continue;
+        }
+
+        let new_dist = dist[s][current_id] + neighbors[w];
+        let nextNode: BrandesHeapEntry = { id: w, best: dist[s][w] };
+        if (dist[s][w] > new_dist) {
+          if (isFinite(dist[s][w])) { //this means the node has already been encountered
+            let x = Q.remove(nextNode);
+            nextNode.best = new_dist;
+            Q.insert(nextNode);
+          }
+          else {
+            nextNode.best = new_dist;
+            Q.insert(nextNode);
+          }
+          sigma[s][w] = 0;
+          dist[s][w] = new_dist;
+        }
+
+        if (dist[s][w] === new_dist) {
+          sigma[s][w] += sigma[s][current_id];
+        }
+      }
+    }
+
+  }
+
+  return { sigma, dist };
 
 }
 

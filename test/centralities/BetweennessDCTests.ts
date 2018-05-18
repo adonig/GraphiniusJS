@@ -33,16 +33,9 @@ describe('test divide and conquer', () => {
     let SNresults = $DC.prepareSuperNode(graph, parts);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let adjList = $DC.BrandesForSuperNode(partitions[0], intraSNedges[0]);
-    console.log(adjList);
+    let result = $DC.BrandesForSuperNode(partitions[0], intraSNedges[0], graph);
+    
 
-    /*$DC.prepareSuperNode(graph, parts);
-    let nodes = graph.getNodes();
-    for (let node in nodes){
-      console.log("nodeID: "+nodes[node].getID());
-      console.log("partition nr: "+nodes[node].getFeature("partition"));
-      console.log("frontier node: "+nodes[node].getFeature("frontier"));
-      console.log();*/
   });
 
   it.only('label partition and frontier-boolean correctly if there are favorite nodes', () => {
@@ -52,8 +45,8 @@ describe('test divide and conquer', () => {
     let SNresults = $DC.prepareSuperNode(graph, parts, targets);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let adjList = $DC.BrandesForSuperNode(partitions[0], intraSNedges[0]);
-    console.log(adjList);
+    let result = $DC.BrandesForSuperNode(partitions[0], intraSNedges[0], graph);
+    
 
 
   });
