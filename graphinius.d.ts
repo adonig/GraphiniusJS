@@ -762,6 +762,36 @@ declare module 'graphinius/centralities/Betweenness' {
 	export { betweennessCentrality };
 
 }
+declare module 'graphinius/centralities/BetweennessDC' {
+	/// <reference path="../../typings/tsd.d.ts" />
+	import * as $G from 'graphinius/core/Graph'; function fakePartition(graph: $G.IGraph): {}; function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {}, targetSet?: {
+	    [key: string]: boolean;
+	}): {
+	    partitions: {};
+	    intraSNedges: {};
+	    interSNedges: {};
+	    frontiersDict: {};
+	};
+	export interface BrandesHeapEntry {
+	    id: string;
+	    best: number;
+	} function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph): {
+	    sigma: {
+	        [key: string]: {
+	            [key: string]: number;
+	        };
+	    };
+	    dist: {
+	        [key: string]: {
+	            [key: string]: number;
+	        };
+	    };
+	}; function BrandesDCmain(graph: $G.IGraph, targetSet?: {
+	    [key: string]: boolean;
+	}): $G.IGraph;
+	export { fakePartition, prepareSuperNode, Dijkstra_SK, BrandesDCmain };
+
+}
 declare module 'graphinius/centralities/Brandes' {
 	/// <reference path="../../typings/tsd.d.ts" />
 	/**
