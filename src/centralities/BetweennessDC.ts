@@ -109,7 +109,7 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
       ends["a"].setFeature("frontier", true);
       ends["b"].setFeature("frontier", true);
       if (!nodeIDsInSK[ends["a"].getID()]) {
-        skeleton.addNode(ends["a"]);
+        skeleton.cloneAndAddNode(ends["a"]);
         nodeIDsInSK[ends["a"].getID()] = true;
         if (a_part !== -1) {
           frontiersDict[a_part][ends["a"].getID()] = true;
@@ -117,7 +117,7 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
 
       }
       if (!nodeIDsInSK[ends["b"].getID()]) {
-        skeleton.addNode(ends["b"]);
+        skeleton.cloneAndAddNode(ends["b"]);
         nodeIDsInSK[ends["b"].getID()] = true;
         if (b_part !== -1) {
           frontiersDict[b_part][ends["b"].getID()] = true;
@@ -125,8 +125,8 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
       }
 
       interSNedges[edge.getID()] = { "sigma": 1, "dist": edge.getWeight() };
-      //TODO: the following line is needed, but now it throws exception!
-      //skeleton.addEdge(edge);
+      //TODO: substitute with new and simpler function
+      skeleton.addEdgeByNodeIDs(edge.getID(), ends["a"].getID(), ends["b"].getID(), { directed: edge.isDirected(), weighted: true, weight: edge.getWeight() });
     }
     //intraSN edge
     else {
@@ -276,12 +276,13 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
     for (let f in frontiers[part]) {
       for (let ff in frontiers[part]) {
         if (f !== ff) {
-          skeleton.addEdgeByID(part + "_" + f + "_" + ff, graph.getNodeById(f), graph.getNodeById(ff),
+          skeleton.addEdgeByNodeIDs(part + "_" + f + "_" + ff, f, ff,
             { directed: true, weighted: true, weight: allResults[part].dist[f][ff] });
         }
       }
     }
   }
+  //TODO: put the sigma of the edge into the edge features!
 
   return skeleton;
 
