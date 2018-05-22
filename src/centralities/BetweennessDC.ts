@@ -59,12 +59,17 @@ function fakePartition(graph: $G.IGraph): {} {
 
 //one function to handle Brandes++ and Brandes++All (with and without target node set)
 //LOGIC: partitions are labeled with integers starting with 0. Target nodes, if any, will be labeled as partition -1
-function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: string]: boolean }) {
+function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {}, targetSet?: { [key: string]: boolean }) {
+
+  //intraSN edges will be sorted similarly as the nodes in the partitions object
+  let intraSNedges = {};
+  let frontiersDict = {};
+
   //first label each node with partition number and label as non-frontier
-
-
   for (let part in partitions) {
     let dict = partitions[part];
+    intraSNedges[part] = {};
+    frontiersDict[part] = {};
     for (let id in dict) {
       let node: $N.IBaseNode = graph.getNodeById(id);
 
@@ -90,11 +95,8 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
 
   //interSN edges soon get their characteristic tuples
   let interSNedges = {};
-  //intraSN edges will be sorted smilarly as the nodes in the partitions object
-  let intraSNedges = {};
-  for (let key in partitions) {
-    intraSNedges[key] = {};
-  }
+
+  let nodeIDsInSK = {};
 
   for (let edge of allEdges) {
     let ends = edge.getNodes();
@@ -106,7 +108,25 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
     if (a_part !== b_part || a_part === -1 || b_part === -1) {
       ends["a"].setFeature("frontier", true);
       ends["b"].setFeature("frontier", true);
+      if (!nodeIDsInSK[ends["a"].getID()]) {
+        skeleton.addNode(ends["a"]);
+        nodeIDsInSK[ends["a"].getID()] = true;
+        if (a_part !== -1) {
+          frontiersDict[a_part][ends["a"].getID()] = true;
+        }
+
+      }
+      if (!nodeIDsInSK[ends["b"].getID()]) {
+        skeleton.addNode(ends["b"]);
+        nodeIDsInSK[ends["b"].getID()] = true;
+        if (b_part !== -1) {
+          frontiersDict[b_part][ends["b"].getID()] = true;
+        }
+      }
+
       interSNedges[edge.getID()] = { "sigma": 1, "dist": edge.getWeight() };
+      //TODO: the following line is needed, but now it throws exception!
+      //skeleton.addEdge(edge);
     }
     //intraSN edge
     else {
@@ -114,7 +134,7 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
       intraSNedges[a_part][edge.getID()] = true;
     }
   }
-  return { partitions, intraSNedges, interSNedges };
+  return { partitions, intraSNedges, interSNedges, frontiersDict };
 }
 
 export interface BrandesHeapEntry {
@@ -122,7 +142,8 @@ export interface BrandesHeapEntry {
   best: number;
 }
 
-function BrandesForSuperNode(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
+//TOD: think it over, do I need parents here, and delta, too?
+function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
   //first make the adjListDict
   let adjListDict = {};
   for (let key in nodeList) {
@@ -148,18 +169,17 @@ function BrandesForSuperNode(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
     frontierCounter: number,
     sigma: { [key: string]: { [key: string]: number } } = {}, //number of shortest paths from source s to each node as goal node
     dist: { [key: string]: { [key: string]: number } } = {},  //distances from source node s to each node
-    closedNodes: { [key: string]: { [key: string]: boolean } } = {},
+    closedNodes: { [key: string]: boolean } = {},
     Q: $BH.BinaryHeap = new $BH.BinaryHeap($BH.BinaryHeapMode.MIN, evalPriority, evalObjID);
 
   //eventual target nodes are not represented in the adjListDict, that's why it isbetter to use that instead of the nodeList
   for (let n in adjListDict) {
     dist[n] = {};
     sigma[n] = {};
-    closedNodes[n] = {};
     for (let nn in adjListDict) {
       dist[n][nn] = Number.POSITIVE_INFINITY;
       sigma[n][nn] = 0;
-      closedNodes[n][nn] = false;
+      closedNodes[nn] = false;
     }
   }
 
@@ -171,7 +191,6 @@ function BrandesForSuperNode(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
 
     let source: BrandesHeapEntry = { id: s, best: 0 };
     Q.insert(source);
-    closedNodes[s][s] = true;
 
     while (Q.size() > 0) {
 
@@ -181,7 +200,7 @@ function BrandesForSuperNode(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
         frontierCounter++;
       }
 
-      closedNodes[s][current_id] = true;
+      closedNodes[current_id] = true;
 
       if (frontierCounter > 2 && graph.getNodeById(current_id).getFeature("frontier")) {
         continue;
@@ -189,10 +208,8 @@ function BrandesForSuperNode(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
 
       let neighbors = adjListDict[current_id];
       for (let w in neighbors) {
-        console.log("frontier:" + frontierCounter);
 
-
-        if (closedNodes[s][w]) {
+        if (closedNodes[w]) {
           continue;
         }
 
@@ -218,10 +235,57 @@ function BrandesForSuperNode(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
       }
     }
 
+    //re-initializing the closed nodes dictionary
+    for (let n in closedNodes) {
+      closedNodes[n] = false;
+    }
   }
 
   return { sigma, dist };
 
 }
 
-export { fakePartition, prepareSuperNode, BrandesForSuperNode }
+function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean }): $G.IGraph {
+  //TODO: a better partitioning algorithm comes here 
+  let partitions = fakePartition(graph);
+
+  let skeleton = new $G.BaseGraph("skeleton");
+
+  //the prepareSuperNode method adds all frontier (+target) nodes and interSN edges to the skeleton graph already
+  let superNodes;
+  if (targetSet) {
+    superNodes = prepareSuperNode(graph, skeleton, partitions, targetSet);
+  }
+  else {
+    superNodes = prepareSuperNode(graph, skeleton, partitions);
+  }
+
+  let parts = superNodes.partitions;
+  let intraSN = superNodes.intraSNedges;
+  let frontiers = superNodes.frontiersDict;
+  let allResults = {};
+
+  //TODO: instead of this simple for loop, these will be processed by multiple threads
+  for (let key in parts) {
+    let result = Dijkstra_SK(parts[key], intraSN[key], graph);
+    allResults[key] = result;
+  }
+
+  //add missing edges to the skeleton graph: edges that connect frontiers of the same partition
+  for (let part in frontiers) {
+    for (let f in frontiers[part]) {
+      for (let ff in frontiers[part]) {
+        if (f !== ff) {
+          skeleton.addEdgeByID(part + "_" + f + "_" + ff, graph.getNodeById(f), graph.getNodeById(ff),
+            { directed: true, weighted: true, weight: allResults[part].dist[f][ff] });
+        }
+      }
+    }
+  }
+
+  return skeleton;
+
+}
+
+
+export { fakePartition, prepareSuperNode, Dijkstra_SK, BrandesDCmain }
