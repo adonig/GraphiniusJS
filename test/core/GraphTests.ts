@@ -96,6 +96,7 @@ describe('GRAPH TESTS: ', () => {
 				expect(stats.nr_nodes).to.equal(1);
 			});
 
+
 			it('should correctly clone and add a node from another graph without adding its edges', () => {
 				let n_a = graph.addNodeByID("A");
 				let n_b = graph.addNodeByID("B");
@@ -315,7 +316,142 @@ describe('GRAPH TESTS: ', () => {
 
 		});
 
+
+
+		/**
+		 * @comment No tests for non-existing nodes necessary, since a valid edge
+		 * 					can only be constructed with valid node objects
+		 */
+		describe('Clone and add edge tests - ', () => {
+
+			let source_graph: $G.IGraph;
+			let target_graph: $G.IGraph;
+			let node_a: $N.IBaseNode;
+			let node_b: $N.IBaseNode;
+			let source_edge: $E.IBaseEdge;
+			let target_edge: $E.IBaseEdge;
+			let edge_options: $E.EdgeConstructorOptions = {directed: true, weighted: true, weight: 5};
+			let edge_features: {[key: string]: any} = {"type": "friendship", "partition": 1, "sigma": 3};
+
+			before( () => {
+				source_graph = new $G.BaseGraph("Source graph");
+				node_a = source_graph.addNodeByID("A");
+				node_b = source_graph.addNodeByID("B");
+				source_edge = new $E.BaseEdge("Source edge", node_a, node_b);
+				source_graph.addEdge(source_edge);
+			});
+
+			beforeEach( () => {
+				expect(source_graph.nrNodes()).to.equal(2);
+				expect(source_graph.nrDirEdges()).to.equal(0);
+				expect(source_graph.nrUndEdges()).to.equal(1);
+				target_graph = new $G.BaseGraph("Target graph");
+				expect(target_graph.nrNodes()).to.equal(0);
+				expect(target_graph.nrDirEdges()).to.equal(0);
+				expect(target_graph.nrUndEdges()).to.equal(0);
+			});
+		
+
+			it('should refuse to clone an undefined edge', () => {
+				expect(target_graph.cloneAndAddEdge.bind(target_graph, undefined)).to.throw("cowardly refusing to clone non-existing edge");
+			});
+
+
+			it('should refuse to clone a null edge', () => {
+				expect(target_graph.cloneAndAddEdge.bind(target_graph, null)).to.throw("cowardly refusing to clone non-existing edge");
+			});
+
+
+			it('should refuse to clone an edge with node_a not in target graph', () => {
+				target_graph.cloneAndAddNode(node_a);
+				expect(target_graph.nrNodes()).to.equal(1);
+				expect(target_graph.cloneAndAddEdge.bind(target_graph, source_edge)).to.throw("can only add edge between two nodes existing in graph");
+			});
+
+
+			it('should refuse to clone an edge with node_b not in target graph', () => {
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.nrNodes()).to.equal(1);
+				expect(target_graph.cloneAndAddEdge.bind(target_graph, source_edge)).to.throw("can only add edge between two nodes existing in graph");
+			});
+
+
+			it('should return a valid edge object upon successful cloning', () => {
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.nrNodes()).to.equal(2);
+				target_edge = target_graph.cloneAndAddEdge(source_edge);
+				expect(target_edge).to.exist;
+				expect(target_edge).to.be.an.instanceof($E.BaseEdge);
+			});
+
+
+			it('should return a reference to a new edge upon successful cloning', () => {
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.cloneAndAddEdge(source_edge)).not.to.equal(source_edge);
+				expect(target_graph.cloneAndAddEdge(source_edge)).not.to.deep.equal(source_edge);
+			});
+
+
+			it('should correctly set an UNdirected edge & update the target graph accordingly', () => {
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.cloneAndAddEdge(source_edge).isDirected()).to.be.false;
+				expect(target_graph.nrDirEdges()).to.equal(0);
+				expect(target_graph.nrUndEdges()).to.equal(1);
+			});
+
+
+			it('should correctly set a directed edge & update the target graph accordingly', () => {
+				source_edge = new $E.BaseEdge("Source edge", node_a, node_b, edge_options);
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.cloneAndAddEdge(source_edge).isDirected()).to.be.true;
+				expect(target_graph.nrDirEdges()).to.equal(1);
+				expect(target_graph.nrUndEdges()).to.equal(0);
+			});			
+
+
+			it('should correctly set the correct weighted value', () => {
+				source_edge = new $E.BaseEdge("Source edge", node_a, node_b, edge_options);
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.cloneAndAddEdge(source_edge).isWeighted()).to.be.true;
+			});
+
+
+			it('should set the correct weight', () => {
+				source_edge = new $E.BaseEdge("Source edge", node_a, node_b, edge_options);
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.cloneAndAddEdge(source_edge).getWeight()).to.equal(5);
+			});
+
+
+			it('should correctly set a new (fresh) features object', () => {
+				source_edge = new $E.BaseEdge("Source edge", node_a, node_b, edge_options, edge_features);
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.cloneAndAddEdge(source_edge).getFeatures()).to.exist;
+				expect(target_graph.cloneAndAddEdge(source_edge).getFeatures()).not.to.be.empty;
+				expect(target_graph.cloneAndAddEdge(source_edge).getFeatures()).not.to.equal(edge_features);
+			});
+
+
+			it('should correctly clone the features object', () => {
+				source_edge = new $E.BaseEdge("Source edge", node_a, node_b, edge_options, edge_features);
+				target_graph.cloneAndAddNode(node_a);
+				target_graph.cloneAndAddNode(node_b);
+				expect(target_graph.cloneAndAddEdge(source_edge).getFeatures()).to.exist;
+				expect(target_graph.cloneAndAddEdge(source_edge).getFeatures()).not.to.be.empty;
+				expect(target_graph.cloneAndAddEdge(source_edge).getFeatures()).to.deep.equal(edge_features);
+			});
+
+		});
+
 	});
+
 
 
 	/**
@@ -1023,7 +1159,7 @@ describe('GRAPH TESTS: ', () => {
 			json_in = new $JSON.JSONInput(false, false, true);
 			graph = csv_sn.readFromEdgeListFile("./test/test_data/social_network_edges_1K.csv");
 
-			clone_graph = graph.cloneSubGraph(graph.getNodeById("1374"), 300);
+			clone_graph = graph.cloneBFSSubGraph(graph.getNodeById("1374"), 300);
 
 			expect(clone_graph.nrNodes()).to.equal(300);
 			expect(clone_graph.nrUndEdges()).to.equal(4635); //TODO:: check number?

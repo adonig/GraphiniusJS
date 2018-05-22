@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var $N = require("./Nodes");
 var $E = require("./Edges");
-var $DS = require("../utils/structUtils");
+var $SU = require("../utils/structUtils");
 var logger_1 = require("../utils/logger");
 var $BFS = require("../search/BFS");
 var $DFS = require("../search/DFS");
@@ -234,11 +234,12 @@ var BaseGraph = /** @class */ (function () {
     /**
      * Instantiates a new node object, copies the features and
      * adds the node to the graph, but does NOT clone it's edges
+     *
      * @param node the node object to clone
      */
     BaseGraph.prototype.cloneAndAddNode = function (node) {
         var new_node = new $N.BaseNode(node.getID());
-        new_node.setFeatures($DS.clone(node.getFeatures()));
+        new_node.setFeatures($SU.clone(node.getFeatures()));
         this._nodes[node.getID()] = new_node;
         this._nr_nodes += 1;
         return new_node;
@@ -360,6 +361,38 @@ var BaseGraph = /** @class */ (function () {
         else {
             return this.addEdgeByID(label, node_a, node_b, opts);
         }
+    };
+    /**
+     * Instantiates a new edge object, copies the features and
+     * adds the edge to the graph, given the original nodes
+     * also exist in this graph (by ID)
+     *
+     * @param edge the edge object to clone
+     */
+    BaseGraph.prototype.cloneAndAddEdge = function (edge) {
+        if (!edge) {
+            throw new Error('cowardly refusing to clone non-existing edge');
+        }
+        var node_a = this.getNodeById(edge.getNodes().a.getID());
+        var node_b = this.getNodeById(edge.getNodes().b.getID());
+        if (!node_a || !node_b) {
+            throw new Error('can only add edge between two nodes existing in graph');
+        }
+        var constructor_options = {
+            directed: edge.isDirected(),
+            weighted: edge.isWeighted(),
+            weight: edge.getWeight()
+        };
+        var new_edge = new $E.BaseEdge(edge.getID(), node_a, node_b, constructor_options, $SU.clone(edge.getFeatures()));
+        if (new_edge.isDirected()) {
+            this._dir_edges[new_edge.getID()] = new_edge;
+            this._nr_dir_edges += 1;
+        }
+        else {
+            this._und_edges[new_edge.getID()] = new_edge;
+            this._nr_und_edges += 1;
+        }
+        return new_edge;
     };
     /**
      * Now all test cases pertaining addEdge() call this one...
@@ -518,7 +551,7 @@ var BaseGraph = /** @class */ (function () {
         });
         return new_graph;
     };
-    BaseGraph.prototype.cloneSubGraph = function (root, cutoff) {
+    BaseGraph.prototype.cloneBFSSubGraph = function (root, cutoff) {
         var new_graph = new BaseGraph(this._label);
         var config = $BFS.prepareBFSStandardConfig();
         var bfsNodeUnmarkedTestCallback = function (context) {

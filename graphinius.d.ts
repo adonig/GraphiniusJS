@@ -556,6 +556,7 @@ declare module 'graphinius/core/Graph' {
 	    addEdgeByID(label: string, node_a: $N.IBaseNode, node_b: $N.IBaseNode, opts?: {}): $E.IBaseEdge;
 	    addEdge(edge: $E.IBaseEdge): $E.IBaseEdge;
 	    addEdgeByNodeIDs(label: string, node_a_id: string, node_b_id: string, opts?: {}): $E.IBaseEdge;
+	    cloneAndAddEdge(edge: $E.IBaseEdge): $E.IBaseEdge;
 	    hasEdgeID(id: string): boolean;
 	    getEdgeById(id: string): $E.IBaseEdge;
 	    getDirEdgeByNodeIDs(node_a_id: string, node_b_id: string): $E.IBaseEdge;
@@ -588,7 +589,7 @@ declare module 'graphinius/core/Graph' {
 	    clearAllUndEdges(): void;
 	    clearAllEdges(): void;
 	    clone(): IGraph;
-	    cloneSubGraph(start: $N.IBaseNode, cutoff: Number): IGraph;
+	    cloneBFSSubGraph(start: $N.IBaseNode, cutoff: Number): IGraph;
 	    adjListDict(incoming?: boolean, include_self?: any, self_dist?: number): MinAdjacencyListDict;
 	    adjListArray(incoming?: boolean): MinAdjacencyListArray;
 	    nextArray(incoming?: boolean): NextArray;
@@ -669,6 +670,7 @@ declare module 'graphinius/core/Graph' {
 	    /**
 	     * Instantiates a new node object, copies the features and
 	     * adds the node to the graph, but does NOT clone it's edges
+	     *
 	     * @param node the node object to clone
 	     */
 	    cloneAndAddNode(node: $N.IBaseNode): $N.IBaseNode;
@@ -696,6 +698,14 @@ declare module 'graphinius/core/Graph' {
 	    getDirEdgesArray(): Array<$E.IBaseEdge>;
 	    getUndEdgesArray(): Array<$E.IBaseEdge>;
 	    addEdgeByNodeIDs(label: string, node_a_id: string, node_b_id: string, opts?: {}): $E.IBaseEdge;
+	    /**
+	     * Instantiates a new edge object, copies the features and
+	     * adds the edge to the graph, given the original nodes
+	     * also exist in this graph (by ID)
+	     *
+	     * @param edge the edge object to clone
+	     */
+	    cloneAndAddEdge(edge: $E.IBaseEdge): $E.IBaseEdge;
 	    /**
 	     * Now all test cases pertaining addEdge() call this one...
 	     */
@@ -725,7 +735,7 @@ declare module 'graphinius/core/Graph' {
 	     */
 	    getRandomUndEdge(): $E.IBaseEdge;
 	    clone(): IGraph;
-	    cloneSubGraph(root: $N.IBaseNode, cutoff: Number): IGraph;
+	    cloneBFSSubGraph(root: $N.IBaseNode, cutoff: Number): IGraph;
 	    protected checkConnectedNodeOrThrow(node: $N.IBaseNode): void;
 	    protected updateGraphMode(): void;
 	    pickRandomProperty(propList: any): any;

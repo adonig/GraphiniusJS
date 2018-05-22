@@ -90,8 +90,6 @@ class BaseEdge implements IBaseEdge {
 		this._label = label;
 	}
 
-	//=================================================================
-
 	getFeatures() : { [k:string] : any } {
 		return this._features;
 	}
@@ -120,8 +118,6 @@ class BaseEdge implements IBaseEdge {
 		this._features = {};
 		return this;
 	}
-
-	//=================================================================
 
 	isDirected () : boolean {
 		return this._directed;

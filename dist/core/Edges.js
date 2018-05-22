@@ -27,7 +27,6 @@ var BaseEdge = /** @class */ (function () {
     BaseEdge.prototype.setLabel = function (label) {
         this._label = label;
     };
-    //=================================================================
     BaseEdge.prototype.getFeatures = function () {
         return this._features;
     };
@@ -51,7 +50,6 @@ var BaseEdge = /** @class */ (function () {
         this._features = {};
         return this;
     };
-    //=================================================================
     BaseEdge.prototype.isDirected = function () {
         return this._directed;
     };
