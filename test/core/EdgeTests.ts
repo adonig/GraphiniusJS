@@ -56,6 +56,101 @@ describe('==== EDGE TESTS ====', () => {
 		});
 		
 	});
+
+
+	describe('Edge FEATURE vector tests', () => {
+
+		let feats: {[key: string]: any};
+		let edge: $E.IBaseEdge;
+		
+		beforeEach( () => {
+			feats = {name: 'Bernie', age: 36, present: 'laboring nobody', future: 'Billionaire'};
+			edge = new $E.BaseEdge(id, node_a, node_b, {}, feats);
+		});
+
+			
+		it('should correctly set default features to an empty hash object', () => {
+			const featureless_edge = new $E.BaseEdge(id, node_a, node_b);
+			expect(featureless_edge.getFeatures()).to.be.an.instanceof(Object);
+			expect(featureless_edge.getFeatures()).to.be.empty;
+		});
+		
+		it('should correctly set features to specified object', () => {
+			expect(edge.getFeatures()).to.be.an.instanceof(Object);
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			expect(edge.getFeatures()).to.deep.equal(feats);
+		});
+		
+		it('should return undefined upon trying to retrieve a non-set feature', () => {
+			expect(edge.getFeature('menotexistsjabba')).to.be.undefined;
+		});
+		
+		it('should correctly retrieve a set feature', () => {
+			expect(edge.getFeature('future')).to.equal('Billionaire');			
+		});
+		
+		it('should allow to set new feature', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			edge.setFeature('founder', 'Lemontiger');
+			expect(Object.keys(edge.getFeatures()).length).to.equal(5);
+			expect(edge.getFeature('founder')).to.equal('Lemontiger');			
+		});
+		
+		it('should automatically overwrite an existing feature upon renewed setting', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			edge.setFeature('future', 'Bazillionaire');
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			expect(edge.getFeature('future')).to.equal('Bazillionaire');	
+		});
+		
+		it('should return undefined upon trying to delete a non-set feature', () => {
+			expect(edge.deleteFeature('menotexistsjabba')).to.be.undefined;
+		});
+
+		it('should duly return a given feature upon deletion', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			expect(edge.deleteFeature('age')).to.equal(36);
+		});
+		
+		it('should duly eradicatea given feature', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			edge.deleteFeature('age');
+			expect(Object.keys(edge.getFeatures()).length).to.equal(3);
+		});
+		
+		it('should allow to replace the whole feature vector', () => {
+			var feats = {name: 'Bernie', age: '36', future: 'Billionaire'};
+			var node = new $N.BaseNode(id, feats);
+			expect(Object.keys(node.getFeatures()).length).to.equal(3);
+			node.setFeatures({});
+			expect(Object.keys(node.getFeatures()).length).to.equal(0);	
+		});
+		
+		it('should allow to clear the whole feature vector', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			edge.clearFeatures();
+			expect(Object.keys(edge.getFeatures()).length).to.equal(0);			
+		});
+
+		it('should return this pointer upon setFeature so we can chain methods', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			edge.setFeature('founder', 'Lemontiger').setFeature('bla', 'hoo');
+			expect(Object.keys(edge.getFeatures()).length).to.equal(6);
+		});
+
+		it('should return this pointer upon setFeatures so we can chain methods', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			edge.setFeatures({'founder': 'Lemontiger'}).setFeature('bla', 'hoo');
+			expect(Object.keys(edge.getFeatures()).length).to.equal(2);
+		});
+
+		it('should return this pointer upon clearFeatures so we can chain methods', () => {
+			expect(Object.keys(edge.getFeatures()).length).to.equal(4);
+			edge.clearFeatures().setFeature('bla', 'hoo');
+			expect(Object.keys(edge.getFeatures()).length).to.equal(1);
+		});
+
+	});
 	
 	
 	describe('Direction Edge Tests: ', () => {		

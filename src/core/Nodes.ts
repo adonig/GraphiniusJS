@@ -18,10 +18,10 @@ export interface IBaseNode {
 	// FEATURES methods
 	getFeatures() : { [k:string] : any };
 	getFeature(key: string) : any;
-	setFeatures( features: { [k:string]: any } ) : void;	
-	setFeature(key: string, value: any) : void;
+	setFeatures( features: { [k:string]: any } ) : IBaseNode;	
+	setFeature(key: string, value: any) : IBaseNode;
 	deleteFeature(key: string) : any;
-	clearFeatures() : void;
+	clearFeatures() : IBaseNode;
 	
 	// Degrees
 	inDegree() : number;
@@ -67,8 +67,8 @@ class BaseNode implements IBaseNode {
 	protected _label : string;
 	private _in_degree = 0;
 	private _out_degree = 0;
-	private _und_degree = 0;	
-	protected _features	: { [k:string] : any };
+	private _und_degree = 0;
+	protected _features	: { [key :string] : any };
 		
 	/**
 	 * Design decision:
@@ -103,38 +103,34 @@ class BaseNode implements IBaseNode {
 	setLabel(label : string) : void {
 		this._label = label;
 	}
-		
+	
 	getFeatures() : { [k:string] : any } {
 		return this._features;
 	}
 	
 	getFeature(key: string) : any {
 		return this._features[key];
-		// if ( !feat ) {
-		// 	throw new Error("Cannot retrieve non-existing feature.");
-		// }
-		// return feat;
 	}
 	
-	setFeatures( features: { [k:string]: any } ) : void {
+	setFeatures( features: { [k:string]: any } ) : IBaseNode {
 		this._features = $SU.clone(features);
+		return this;
 	}
 	
-	setFeature(key: string, value: any) : void {
+	setFeature(key: string, value: any) : IBaseNode {
 		this._features[key] = value;
+		return this;
 	}
 	
 	deleteFeature(key: string) : any {
 		var feat = this._features[key];
-		// if ( !feat ) {
-		// 	throw new Error("Cannot delete non-existing feature.");
-		// }
 		delete this._features[key];
 		return feat;
 	}
 	
-	clearFeatures() : void {
+	clearFeatures() : IBaseNode {
 		this._features = {};
+		return this;
 	}
 				
 	inDegree() : number {

@@ -28,27 +28,23 @@ var BaseNode = /** @class */ (function () {
     };
     BaseNode.prototype.getFeature = function (key) {
         return this._features[key];
-        // if ( !feat ) {
-        // 	throw new Error("Cannot retrieve non-existing feature.");
-        // }
-        // return feat;
     };
     BaseNode.prototype.setFeatures = function (features) {
         this._features = $SU.clone(features);
+        return this;
     };
     BaseNode.prototype.setFeature = function (key, value) {
         this._features[key] = value;
+        return this;
     };
     BaseNode.prototype.deleteFeature = function (key) {
         var feat = this._features[key];
-        // if ( !feat ) {
-        // 	throw new Error("Cannot delete non-existing feature.");
-        // }
         delete this._features[key];
         return feat;
     };
     BaseNode.prototype.clearFeatures = function () {
         this._features = {};
+        return this;
     };
     BaseNode.prototype.inDegree = function () {
         return this._in_degree;

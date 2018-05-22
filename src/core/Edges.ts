@@ -1,4 +1,5 @@
 import * as $N from "./Nodes";
+import * as $SU from "../utils/structUtils";
 
 export interface IConnectedNodes {
 	a: $N.IBaseNode;
@@ -16,6 +17,14 @@ export interface IBaseEdge {
 	getID() : string;
 	getLabel() : string;
 	setLabel(label : string) : void;
+
+	// FEATURES methods
+	getFeatures() : { [k:string] : any };
+	getFeature(key: string) : any;
+	setFeatures( features: { [k:string]: any } ) : IBaseEdge;	
+	setFeature(key: string, value: any) : IBaseEdge;
+	deleteFeature(key: string) : any;
+	clearFeatures() : IBaseEdge;
 
 	isDirected()						: boolean;
 	isWeighted()						: boolean;
@@ -47,11 +56,13 @@ class BaseEdge implements IBaseEdge {
 	protected _weighted 	: boolean;
 	protected _weight			: number;
 	protected _label			: string;
+	protected _features	: { [key :string] : any };
 
 	constructor (protected _id: string,
 							protected _node_a: $N.IBaseNode,
 							protected _node_b: $N.IBaseNode,
-							options?: EdgeConstructorOptions)
+							options?: EdgeConstructorOptions,
+							features?: { [key :string] : any })
 	{
 		if( !( _node_a instanceof $N.BaseNode ) || !( _node_b instanceof $N.BaseNode ) ) {
 			throw new Error("cannot instantiate edge without two valid node objects");
@@ -63,6 +74,8 @@ class BaseEdge implements IBaseEdge {
     // @NOTE isNaN and Number.isNaN confusion...
 		this._weight = this._weighted ? ( isNaN(options.weight) ? 1 : options.weight ) : undefined;
 		this._label = options.label || this._id;
+
+		this._features = features || {};
 	}
 
 	getID() : string {
@@ -76,6 +89,39 @@ class BaseEdge implements IBaseEdge {
 	setLabel(label : string) : void {
 		this._label = label;
 	}
+
+	//=================================================================
+
+	getFeatures() : { [k:string] : any } {
+		return this._features;
+	}
+	
+	getFeature(key: string) : any {
+		return this._features[key];
+	}
+	
+	setFeatures( features: { [k:string]: any } ) : IBaseEdge {
+		this._features = $SU.clone(features);
+		return this;
+	}
+	
+	setFeature(key: string, value: any) : IBaseEdge {
+		this._features[key] = value;
+		return this;
+	}
+	
+	deleteFeature(key: string) : any {
+		var feat = this._features[key];
+		delete this._features[key];
+		return feat;
+	}
+	
+	clearFeatures() : IBaseEdge {
+		this._features = {};
+		return this;
+	}
+
+	//=================================================================
 
 	isDirected () : boolean {
 		return this._directed;
