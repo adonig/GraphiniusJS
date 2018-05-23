@@ -383,15 +383,8 @@ var BaseGraph = /** @class */ (function () {
             weighted: edge.isWeighted(),
             weight: edge.getWeight()
         };
-        var new_edge = new $E.BaseEdge(edge.getID(), node_a, node_b, constructor_options, $SU.clone(edge.getFeatures()));
-        if (new_edge.isDirected()) {
-            this._dir_edges[new_edge.getID()] = new_edge;
-            this._nr_dir_edges += 1;
-        }
-        else {
-            this._und_edges[new_edge.getID()] = new_edge;
-            this._nr_und_edges += 1;
-        }
+        var new_edge = this.addEdgeByID(edge.getID(), node_a, node_b, constructor_options);
+        new_edge.setFeatures($SU.clone(edge.getFeatures()));
         return new_edge;
     };
     /**

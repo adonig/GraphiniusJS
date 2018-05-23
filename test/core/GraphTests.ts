@@ -328,24 +328,27 @@ describe('GRAPH TESTS: ', () => {
 			let target_graph: $G.IGraph;
 			let node_a: $N.IBaseNode;
 			let node_b: $N.IBaseNode;
+			let t_n_a: $N.IBaseNode;
+			let t_n_b: $N.IBaseNode;
 			let source_edge: $E.IBaseEdge;
 			let target_edge: $E.IBaseEdge;
 			let edge_options: $E.EdgeConstructorOptions = {directed: true, weighted: true, weight: 5};
 			let edge_features: {[key: string]: any} = {"type": "friendship", "partition": 1, "sigma": 3};
 
-			before( () => {
-				source_graph = new $G.BaseGraph("Source graph");
-				node_a = source_graph.addNodeByID("A");
-				node_b = source_graph.addNodeByID("B");
-				source_edge = new $E.BaseEdge("Source edge", node_a, node_b);
-				source_graph.addEdge(source_edge);
-			});
 
 			beforeEach( () => {
+				source_graph = new $G.BaseGraph("Source graph");
+				target_graph = new $G.BaseGraph("Target graph");
+				node_a = source_graph.addNodeByID("A");
+				node_b = source_graph.addNodeByID("B");
+				t_n_a = null;
+				t_n_b = null;
+				source_edge = new $E.BaseEdge("Source edge", node_a, node_b);
+				target_edge = null;
+				source_graph.addEdge(source_edge);
 				expect(source_graph.nrNodes()).to.equal(2);
 				expect(source_graph.nrDirEdges()).to.equal(0);
 				expect(source_graph.nrUndEdges()).to.equal(1);
-				target_graph = new $G.BaseGraph("Target graph");
 				expect(target_graph.nrNodes()).to.equal(0);
 				expect(target_graph.nrDirEdges()).to.equal(0);
 				expect(target_graph.nrUndEdges()).to.equal(0);
@@ -389,27 +392,75 @@ describe('GRAPH TESTS: ', () => {
 			it('should return a reference to a new edge upon successful cloning', () => {
 				target_graph.cloneAndAddNode(node_a);
 				target_graph.cloneAndAddNode(node_b);
-				expect(target_graph.cloneAndAddEdge(source_edge)).not.to.equal(source_edge);
-				expect(target_graph.cloneAndAddEdge(source_edge)).not.to.deep.equal(source_edge);
+				target_edge = target_graph.cloneAndAddEdge(source_edge);
+				expect(target_edge).not.to.equal(source_edge);
+				// Because the node representation is the same in Source and Target...?
+				expect(target_edge).to.deep.equal(source_edge);
+			});
+
+
+			/**
+			 * @todo also include tests for a->b reversed order and loops?
+			 */
+			it('cloned edge should have nodes a and b as endpoints in target graph', () => {
+				t_n_a = target_graph.cloneAndAddNode(node_a);
+				t_n_b = target_graph.cloneAndAddNode(node_b);
+				let new_nodes = target_graph.cloneAndAddEdge(source_edge).getNodes();
+				expect(new_nodes.a).to.equal(t_n_a);
+				expect(new_nodes.b).to.equal(t_n_b);
+			});
+
+
+			it('new node A should have a reference to the newly cloned ege', () => {
+				t_n_a = target_graph.cloneAndAddNode(node_a);
+				t_n_b = target_graph.cloneAndAddNode(node_b);
+				target_edge = target_graph.cloneAndAddEdge(source_edge);
+				let new_nodes = target_edge.getNodes();
+				expect(t_n_a.undEdges()).not.to.be.empty;
+				expect(t_n_a.undEdges()[target_edge.getID()]).to.equal(target_edge);
+			});
+
+
+			it('new node B should have a reference to the newly cloned ege', () => {
+				t_n_a = target_graph.cloneAndAddNode(node_a);
+				t_n_b = target_graph.cloneAndAddNode(node_b);
+				target_edge = target_graph.cloneAndAddEdge(source_edge);
+				let new_nodes = target_edge.getNodes();
+				expect(t_n_b.undEdges()).not.to.be.empty;
+				expect(t_n_b.undEdges()[target_edge.getID()]).to.equal(target_edge);
 			});
 
 
 			it('should correctly set an UNdirected edge & update the target graph accordingly', () => {
-				target_graph.cloneAndAddNode(node_a);
-				target_graph.cloneAndAddNode(node_b);
-				expect(target_graph.cloneAndAddEdge(source_edge).isDirected()).to.be.false;
+				t_n_a = target_graph.cloneAndAddNode(node_a);
+				t_n_b = target_graph.cloneAndAddNode(node_b);
+				target_edge = target_graph.cloneAndAddEdge(source_edge);
+				expect(target_edge.isDirected()).to.be.false;
 				expect(target_graph.nrDirEdges()).to.equal(0);
 				expect(target_graph.nrUndEdges()).to.equal(1);
+				expect(t_n_a.nextNodes()).to.be.empty;
+				expect(t_n_a.prevNodes()).to.be.empty;
+				expect(t_n_a.connNodes()).to.deep.include({node: t_n_b, edge: target_edge});
+				expect(t_n_b.nextNodes()).to.be.empty;
+				expect(t_n_b.prevNodes()).to.be.empty;
+				expect(t_n_b.connNodes()).to.deep.include({node: t_n_a, edge: target_edge});
 			});
 
 
 			it('should correctly set a directed edge & update the target graph accordingly', () => {
 				source_edge = new $E.BaseEdge("Source edge", node_a, node_b, edge_options);
-				target_graph.cloneAndAddNode(node_a);
-				target_graph.cloneAndAddNode(node_b);
-				expect(target_graph.cloneAndAddEdge(source_edge).isDirected()).to.be.true;
+				t_n_a = target_graph.cloneAndAddNode(node_a);
+				t_n_b = target_graph.cloneAndAddNode(node_b);
+				target_edge = target_graph.cloneAndAddEdge(source_edge);
+				expect(target_edge.isDirected()).to.be.true;
 				expect(target_graph.nrDirEdges()).to.equal(1);
 				expect(target_graph.nrUndEdges()).to.equal(0);
+				expect(t_n_a.nextNodes()).to.deep.include({node: t_n_b, edge: target_edge});
+				expect(t_n_a.prevNodes()).to.be.empty;
+				expect(t_n_a.connNodes()).to.be.empty;
+				expect(t_n_b.nextNodes()).to.be.empty;
+				expect(t_n_b.prevNodes()).to.deep.include({node: t_n_a, edge: target_edge});
+				expect(t_n_b.connNodes()).to.be.empty;
 			});			
 
 
