@@ -63,12 +63,20 @@ describe('==== NODE TESTS ====', () => {
 	
 	
 	describe('Node FEATURE vector tests', () => {
-		var feats = {name: 'Bernie', age: 36, future: 'Billionaire'};
-		var node = new $N.BaseNode(id, feats);
+
+		let feats: {[key: string]: any};
+		let node: $N.IBaseNode;
+		
+		beforeEach( () => {
+			feats = {name: 'Bernie', age: 36, future: 'Billionaire'};
+			node = new $N.BaseNode(id, feats);
+		});
+		
 			
 		it('should correctly set default features to an empty hash object', () => {
-			expect(node.getFeatures()).to.be.an.instanceof(Object);
-			expect(Object.keys(node.getFeatures()).length).to.equal(3);
+			const featureless_node = new $N.BaseNode("Menothasanyfeaturesjabba")
+			expect(featureless_node.getFeatures()).to.be.an.instanceof(Object);
+			expect(featureless_node.getFeatures()).to.be.empty;
 		});
 		
 		it('should correctly set features to specified object', () => {
@@ -77,9 +85,9 @@ describe('==== NODE TESTS ====', () => {
 			expect(node.getFeatures()['name']).to.equal('Bernie');
 		});
 		
-		// it('should throw an error when trying to retrieve a non-set feature', () => {
-		// 	expect(node.getFeature.bind(node, 'nokey')).to.throw("Cannot retrieve non-existing feature.");
-		// });
+		it('should return undefined upon trying to retrieve a non-set feature', () => {
+			expect(node.getFeature('menotexistsjabba')).to.be.undefined;
+		});
 		
 		it('should correctly retrieve a set feature', () => {
 			expect(node.getFeature('future')).to.equal('Billionaire');			
@@ -100,9 +108,9 @@ describe('==== NODE TESTS ====', () => {
 			expect(node.getFeature('future')).to.equal('Bazillionaire');	
 		});
 		
-		// it('should throw an error upon trying to delete an unset feature', () => {
-		// 	expect(node.deleteFeature.bind(node, 'nokey')).to.throw("Cannot delete non-existing feature.");
-		// });
+		it('should return undefined upon trying to delete a non-set feature', () => {
+			expect(node.deleteFeature('menotexistsjabba')).to.be.undefined;
+		});
 		
 		it('should duly eradicate a given feature', () => {
 			expect(Object.keys(node.getFeatures()).length).to.equal(3);
@@ -125,6 +133,25 @@ describe('==== NODE TESTS ====', () => {
 			node.clearFeatures();
 			expect(Object.keys(node.getFeatures()).length).to.equal(0);			
 		});
+		
+		it('should return this pointer upon setFeature so we can chain methods', () => {
+			expect(Object.keys(node.getFeatures()).length).to.equal(3);
+			node.setFeature('founder', 'Lemontiger').setFeature('bla', 'hoo');
+			expect(Object.keys(node.getFeatures()).length).to.equal(5);
+		});
+
+		it('should return this pointer upon setFeatures so we can chain methods', () => {
+			expect(Object.keys(node.getFeatures()).length).to.equal(3);
+			node.setFeatures({'founder': 'Lemontiger'}).setFeature('bla', 'hoo');
+			expect(Object.keys(node.getFeatures()).length).to.equal(2);
+		});
+
+		it('should return this pointer upon clearFeatures so we can chain methods', () => {
+			expect(Object.keys(node.getFeatures()).length).to.equal(3);
+			node.clearFeatures().setFeature('bla', 'hoo');
+			expect(Object.keys(node.getFeatures()).length).to.equal(1);
+		});
+		
 	});
 	
 	

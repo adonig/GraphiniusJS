@@ -2,7 +2,7 @@
 
 import * as $N from './Nodes';
 import * as $E from './Edges';
-import * as $DS from '../utils/structUtils';
+import * as $SU from '../utils/structUtils';
 import { Logger } from '../utils/logger';
 import * as $BFS from '../search/BFS';
 import * as $DFS from '../search/DFS';
@@ -59,6 +59,7 @@ export interface IGraph {
 	addEdgeByID(label: string, node_a : $N.IBaseNode, node_b : $N.IBaseNode, opts? : {}) : $E.IBaseEdge;
 	addEdge(edge: $E.IBaseEdge) : $E.IBaseEdge;
 	addEdgeByNodeIDs(label: string, node_a_id: string, node_b_id: string, opts? : {}) : $E.IBaseEdge;
+	cloneAndAddEdge(edge: $E.IBaseEdge) : $E.IBaseEdge;
 	hasEdgeID(id: string) : boolean;
 	getEdgeById(id: string) : $E.IBaseEdge;
 	getDirEdgeByNodeIDs(node_a_id: string, node_b_id: string) : $E.IBaseEdge;
@@ -99,7 +100,7 @@ export interface IGraph {
 
 	// CLONING
 	clone() : IGraph;
-	cloneSubGraph(start:$N.IBaseNode, cutoff:Number) : IGraph;
+	cloneBFSSubGraph(start:$N.IBaseNode, cutoff:Number) : IGraph;
 
 	// REPRESENTATIONS
 	adjListDict(incoming?:boolean, include_self?,  self_dist?:number) : MinAdjacencyListDict;
@@ -369,11 +370,12 @@ class BaseGraph implements IGraph {
 	/**
 	 * Instantiates a new node object, copies the features and
 	 * adds the node to the graph, but does NOT clone it's edges
+	 * 
 	 * @param node the node object to clone
 	 */
 	cloneAndAddNode(node: $N.IBaseNode) : $N.IBaseNode {
 		let new_node = new $N.BaseNode(node.getID());
-		new_node.setFeatures($DS.clone(node.getFeatures()));
+		new_node.setFeatures($SU.clone(node.getFeatures()));
 		this._nodes[node.getID()] = new_node;
 		this._nr_nodes += 1;
 		return new_node;
@@ -522,6 +524,33 @@ class BaseGraph implements IGraph {
 		else {
 			return this.addEdgeByID(label, node_a, node_b, opts);
 		}
+	}
+
+	/**
+	 * Instantiates a new edge object, copies the features and
+	 * adds the edge to the graph, given the original nodes
+	 * also exist in this graph (by ID)
+	 * 
+	 * @param edge the edge object to clone
+	 */
+	cloneAndAddEdge(edge: $E.IBaseEdge) : $E.IBaseEdge {
+		if ( !edge ) {
+			throw new Error('cowardly refusing to clone non-existing edge');
+		}
+		let node_a = this.getNodeById(edge.getNodes().a.getID());
+		let node_b = this.getNodeById(edge.getNodes().b.getID());
+		if ( !node_a || !node_b ) {
+			throw new Error('can only add edge between two nodes existing in graph');
+		}
+		let constructor_options: $E.EdgeConstructorOptions = {
+			directed: edge.isDirected(),
+			weighted: edge.isWeighted(),
+			weight: edge.getWeight()
+		}
+		let new_edge = this.addEdgeByID(edge.getID(), node_a, node_b, constructor_options);
+		new_edge.setFeatures($SU.clone(edge.getFeatures()));
+
+		return new_edge;
 	}
 
 	/**
@@ -719,7 +748,7 @@ class BaseGraph implements IGraph {
 		return new_graph;
 	}
 
-	cloneSubGraph(root:$N.IBaseNode, cutoff:Number) : IGraph{
+	cloneBFSSubGraph(root:$N.IBaseNode, cutoff:Number) : IGraph{
 		let new_graph = new BaseGraph(this._label);
 
 		let config = $BFS.prepareBFSStandardConfig();

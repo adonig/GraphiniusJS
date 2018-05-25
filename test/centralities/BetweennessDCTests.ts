@@ -53,7 +53,7 @@ describe('test divide and conquer', () => {
 
   });
 
-  it.only('check if BrandesDCmain runs', () => {
+  it('check if BrandesDCmain runs', () => {
     let graph = graph_midSizeGraph;
     
     let targets = { "1": true, "3": true, "5": true };

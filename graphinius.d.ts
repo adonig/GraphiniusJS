@@ -1,3 +1,8 @@
+declare module 'graphinius/utils/structUtils' {
+	 function clone(obj: any): any; function mergeArrays(args: Array<Array<any>>, cb?: Function): any[]; function mergeObjects(args: Array<Object>): {}; function findKey(obj: Object, cb: Function): string; function mergeOrderedArraysNoDups(a: Array<number>, b: Array<number>): Array<number>;
+	export { clone, mergeArrays, mergeOrderedArraysNoDups, mergeObjects, findKey };
+
+}
 declare module 'graphinius/core/Edges' {
 	import * as $N from 'graphinius/core/Nodes';
 	export interface IConnectedNodes {
@@ -15,6 +20,16 @@ declare module 'graphinius/core/Edges' {
 	    getID(): string;
 	    getLabel(): string;
 	    setLabel(label: string): void;
+	    getFeatures(): {
+	        [k: string]: any;
+	    };
+	    getFeature(key: string): any;
+	    setFeatures(features: {
+	        [k: string]: any;
+	    }): IBaseEdge;
+	    setFeature(key: string, value: any): IBaseEdge;
+	    deleteFeature(key: string): any;
+	    clearFeatures(): IBaseEdge;
 	    isDirected(): boolean;
 	    isWeighted(): boolean;
 	    getWeight(): number;
@@ -35,10 +50,25 @@ declare module 'graphinius/core/Edges' {
 	    protected _weighted: boolean;
 	    protected _weight: number;
 	    protected _label: string;
-	    constructor(_id: string, _node_a: $N.IBaseNode, _node_b: $N.IBaseNode, options?: EdgeConstructorOptions);
+	    protected _features: {
+	        [key: string]: any;
+	    };
+	    constructor(_id: string, _node_a: $N.IBaseNode, _node_b: $N.IBaseNode, options?: EdgeConstructorOptions, features?: {
+	        [key: string]: any;
+	    });
 	    getID(): string;
 	    getLabel(): string;
 	    setLabel(label: string): void;
+	    getFeatures(): {
+	        [k: string]: any;
+	    };
+	    getFeature(key: string): any;
+	    setFeatures(features: {
+	        [k: string]: any;
+	    }): IBaseEdge;
+	    setFeature(key: string, value: any): IBaseEdge;
+	    deleteFeature(key: string): any;
+	    clearFeatures(): IBaseEdge;
 	    isDirected(): boolean;
 	    isWeighted(): boolean;
 	    getWeight(): number;
@@ -47,11 +77,6 @@ declare module 'graphinius/core/Edges' {
 	    clone(new_node_a: $N.BaseNode, new_node_b: $N.BaseNode): BaseEdge;
 	}
 	export { BaseEdge };
-
-}
-declare module 'graphinius/utils/structUtils' {
-	 function clone(obj: any): any; function mergeArrays(args: Array<Array<any>>, cb?: Function): any[]; function mergeObjects(args: Array<Object>): {}; function findKey(obj: Object, cb: Function): string; function mergeOrderedArraysNoDups(a: Array<number>, b: Array<number>): Array<number>;
-	export { clone, mergeArrays, mergeOrderedArraysNoDups, mergeObjects, findKey };
 
 }
 declare module 'graphinius/core/Nodes' {
@@ -72,10 +97,10 @@ declare module 'graphinius/core/Nodes' {
 	    getFeature(key: string): any;
 	    setFeatures(features: {
 	        [k: string]: any;
-	    }): void;
-	    setFeature(key: string, value: any): void;
+	    }): IBaseNode;
+	    setFeature(key: string, value: any): IBaseNode;
 	    deleteFeature(key: string): any;
-	    clearFeatures(): void;
+	    clearFeatures(): IBaseNode;
 	    inDegree(): number;
 	    outDegree(): number;
 	    degree(): number;
@@ -112,7 +137,7 @@ declare module 'graphinius/core/Nodes' {
 	    private _out_degree;
 	    private _und_degree;
 	    protected _features: {
-	        [k: string]: any;
+	        [key: string]: any;
 	    };
 	    /**
 	     * Design decision:
@@ -143,10 +168,10 @@ declare module 'graphinius/core/Nodes' {
 	    getFeature(key: string): any;
 	    setFeatures(features: {
 	        [k: string]: any;
-	    }): void;
-	    setFeature(key: string, value: any): void;
+	    }): IBaseNode;
+	    setFeature(key: string, value: any): IBaseNode;
 	    deleteFeature(key: string): any;
-	    clearFeatures(): void;
+	    clearFeatures(): IBaseNode;
 	    inDegree(): number;
 	    outDegree(): number;
 	    degree(): number;
@@ -531,6 +556,7 @@ declare module 'graphinius/core/Graph' {
 	    addEdgeByID(label: string, node_a: $N.IBaseNode, node_b: $N.IBaseNode, opts?: {}): $E.IBaseEdge;
 	    addEdge(edge: $E.IBaseEdge): $E.IBaseEdge;
 	    addEdgeByNodeIDs(label: string, node_a_id: string, node_b_id: string, opts?: {}): $E.IBaseEdge;
+	    cloneAndAddEdge(edge: $E.IBaseEdge): $E.IBaseEdge;
 	    hasEdgeID(id: string): boolean;
 	    getEdgeById(id: string): $E.IBaseEdge;
 	    getDirEdgeByNodeIDs(node_a_id: string, node_b_id: string): $E.IBaseEdge;
@@ -563,7 +589,7 @@ declare module 'graphinius/core/Graph' {
 	    clearAllUndEdges(): void;
 	    clearAllEdges(): void;
 	    clone(): IGraph;
-	    cloneSubGraph(start: $N.IBaseNode, cutoff: Number): IGraph;
+	    cloneBFSSubGraph(start: $N.IBaseNode, cutoff: Number): IGraph;
 	    adjListDict(incoming?: boolean, include_self?: any, self_dist?: number): MinAdjacencyListDict;
 	    adjListArray(incoming?: boolean): MinAdjacencyListArray;
 	    nextArray(incoming?: boolean): NextArray;
@@ -644,6 +670,7 @@ declare module 'graphinius/core/Graph' {
 	    /**
 	     * Instantiates a new node object, copies the features and
 	     * adds the node to the graph, but does NOT clone it's edges
+	     *
 	     * @param node the node object to clone
 	     */
 	    cloneAndAddNode(node: $N.IBaseNode): $N.IBaseNode;
@@ -671,6 +698,14 @@ declare module 'graphinius/core/Graph' {
 	    getDirEdgesArray(): Array<$E.IBaseEdge>;
 	    getUndEdgesArray(): Array<$E.IBaseEdge>;
 	    addEdgeByNodeIDs(label: string, node_a_id: string, node_b_id: string, opts?: {}): $E.IBaseEdge;
+	    /**
+	     * Instantiates a new edge object, copies the features and
+	     * adds the edge to the graph, given the original nodes
+	     * also exist in this graph (by ID)
+	     *
+	     * @param edge the edge object to clone
+	     */
+	    cloneAndAddEdge(edge: $E.IBaseEdge): $E.IBaseEdge;
 	    /**
 	     * Now all test cases pertaining addEdge() call this one...
 	     */
@@ -700,7 +735,7 @@ declare module 'graphinius/core/Graph' {
 	     */
 	    getRandomUndEdge(): $E.IBaseEdge;
 	    clone(): IGraph;
-	    cloneSubGraph(root: $N.IBaseNode, cutoff: Number): IGraph;
+	    cloneBFSSubGraph(root: $N.IBaseNode, cutoff: Number): IGraph;
 	    protected checkConnectedNodeOrThrow(node: $N.IBaseNode): void;
 	    protected updateGraphMode(): void;
 	    pickRandomProperty(propList: any): any;
