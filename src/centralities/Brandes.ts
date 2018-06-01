@@ -160,7 +160,7 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
     //Variables for Brandes algorithm
     let s: $N.IBaseNode,     //source node, 
         v: BrandesHeapEntry,    //parent of w, at least one shortest path between s and w leads through v
-        w: string,     //neighbour of v, lies one edge further than v from s, type id nodeID, alias string (got from AdjListDict)
+        w: string,     //neighbour of v, lies one edge further than v from s, type is nodeID, alias string (got from AdjListDict)
 
         Pred: { [key: string]: string[] } = {},     //list of Predecessors=parent nodes
         sigma: { [key: string]: number } = {}, //number of shortest paths from source s to each node as goal node

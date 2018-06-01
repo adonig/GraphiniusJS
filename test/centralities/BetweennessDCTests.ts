@@ -29,35 +29,38 @@ describe('test divide and conquer', () => {
 
   it('label partition and frontier-boolean in each nodes features', () => {
     let graph = graph_midSizeGraph;
-    let skeleton= new $G.BaseGraph("SK");
+    let skeleton = new $G.BaseGraph("SK");
+    let BCdict = {};
     let parts = $DC.fakePartition(graph);
     let SNresults = $DC.prepareSuperNode(graph, skeleton, parts);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph);
-    
+    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict, false);
+
 
   });
 
-  it('label partition and frontier-boolean correctly if there are favorite nodes', () => {
+  it('label partition and frontier-boolean correctly if there is a targetSet', () => {
     let graph = graph_midSizeGraph;
-    let skeleton= new $G.BaseGraph("SK");
+    let skeleton = new $G.BaseGraph("SK");
+    let BCdict = {};
     let targets = { "1": true, "3": true, "5": true };
     let parts = $DC.fakePartition(graph);
     let SNresults = $DC.prepareSuperNode(graph, skeleton, parts, targets);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph);
+    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict, true);
     console.log(result.sigma[52]);
 
 
   });
 
-  it('check if BrandesDCmain runs', () => {
+  it.only('check if BrandesDCmain runs', () => {
     let graph = graph_midSizeGraph;
-    
+
     let targets = { "1": true, "3": true, "5": true };
     $DC.BrandesDCmain(graph, targets);
+    $DC.BrandesDCmain(graph);
 
 
   });
