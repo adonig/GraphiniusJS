@@ -128,7 +128,7 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
 
       interSNedges[edge.getID()] = { "sigma": 1, "dist": edge.getWeight() };
       //similar to nodes, partition of -1 means it is an interSN edge
-      edge.setFeatures({ "partition": -1, "sigma": 1, "dist": edge.getWeight() });
+      edge.setFeatures({ "partition": -1, "sigma": 1});
       //TODO: substitute with new and simpler function
       skeleton.cloneAndAddEdge(edge);
       //skeleton.addEdgeByNodeIDs(edge.getID(), ends["a"].getID(), ends["b"].getID(), { directed: edge.isDirected(), weighted: true, weight: edge.getWeight() });
@@ -195,7 +195,7 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph, BCdict: { [ke
     }
   }
 
-  //TODO: in case there is no targetSet (withTargets ===false), it might be the best to do a real Brandes for this SN
+  //in case there is no targetSet (withTargets ===false), it might be the best to do a real Brandes for this SN
   if (withTargets) {
     for (let s in adjListDict) {
 
@@ -438,6 +438,7 @@ function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: {},
       }
     }
   }
+  //case without targetSet needs to be added here
 
 }
 
