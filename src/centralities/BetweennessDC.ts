@@ -92,8 +92,6 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
     allEdges.push(edge);
   }
 
-  //interSN edges soon get their characteristic tuples
-  let interSNedges = {};
   //used to record which nodes are added to the skeleton, to avoid duplicates
   let nodeIDsInSK = {};
 
@@ -126,10 +124,8 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
         }
       }
 
-      interSNedges[edge.getID()] = { "sigma": 1, "dist": edge.getWeight() };
       //similar to nodes, partition of -1 means it is an interSN edge
-      edge.setFeatures({ "partition": -1, "sigma": 1});
-      //TODO: substitute with new and simpler function
+      edge.setFeatures({ "partition": -1, "sigma": 1 });
       skeleton.cloneAndAddEdge(edge);
       //skeleton.addEdgeByNodeIDs(edge.getID(), ends["a"].getID(), ends["b"].getID(), { directed: edge.isDirected(), weighted: true, weight: edge.getWeight() });
     }
@@ -140,7 +136,7 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
       edge.setFeature("partition", a_part);
     }
   }
-  return { partitions, intraSNedges, interSNedges, frontiersDict };
+  return { partitions, intraSNedges, frontiersDict };
 }
 
 export interface BrandesHeapEntry {
@@ -330,7 +326,7 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph, BCdict: { [ke
 }
 
 //the function that calculates BC for each node of the original graph
-function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: {}, BCdict: {}, targetSet?: {}): void {
+function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: { [key: string]: { [key: string]: boolean } }, BCdict: {}, targetSet?: {}): void {
   //this needs to be different if there is /isn't a targetSet
 
   if (targetSet) {
@@ -356,7 +352,7 @@ function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: {},
       Pred[n] = [];
     }
 
-    for (let s in adjListDict) {
+    for (let s in targetSet) {
 
       closedNodes = {};
       dist[s] = 0;
@@ -407,40 +403,85 @@ function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: {},
       while (S.length >= 1) {
         w = S.pop();
         for (let parent of Pred[w]) {
-          //do frontier nodes get this too, or targetSet nodes only?
-          let multi = skeleton.getDirEdgeByNodeIDs(parent, w).getFeature("sigma");
-          delta[parent] += (sigma[parent] / sigma[w] * multi * (1 + delta[w]));
-
-          if (skeleton.getNodeById(parent).getFeature("frontier") && skeleton.getNodeById(w).getFeature("frontier")) {
-            //every node that lie on the path between w and its parent need to be scored
-            let currPart = skeleton.getNodeById(parent).getFeature("partition");
-            let currDist = DijkstraResults[currPart].dist[s];
-            let currSigma = DijkstraResults[currPart].sigma[s];
-            let shortestD = adjListDict[parent][w];
-            for (let key in currDist) {
-              //check if a node is in a shortest path
-              if (key !== parent && key !== w && currDist[parent][key] + currDist[key][w] === shortestD) {
-                let deltaKey = (currSigma[parent][key] / currSigma[parent][w] * (1 + delta[w]));
-              }
-            }
-
+          if (skeleton.getNodeById(w).getFeature("frontier")) {
+            let multi = skeleton.getUndEdgeByNodeIDs(parent, w).getFeature("sigma");
+            delta[parent] += (sigma[parent] / sigma[w] * multi * (0 + delta[w]));
+          }
+          else {
+            let multi = skeleton.getUndEdgeByNodeIDs(parent, w).getFeature("sigma");
+            delta[parent] += (sigma[parent] / sigma[w] * multi * (1 + delta[w]));
           }
         }
-        if (w != s) {
+
+        if (w !== s) {
           BCdict[w] += delta[w];
         }
+        //careful! one can not empty the dictionary items here, because they are still needed!
+      }
 
-        // reset
-        dist[w] = 0;
+      //the skeleton nodes are finished by now, now lets find and score the on-path nodes
+      for (let targetID in targetSet) {
+        if (targetID === s) {
+          continue;
+        }
+        for (let partID in frontiersDict) {
+          for (let frontID in frontiersDict[partID]) {
+            if (dist[s][targetID] === dist[s][frontID] + dist[frontID][targetID]) {
+              //frontier node on-path
+              for (let parentID of Pred[frontID]) {
+                let parentNode = skeleton.getNodeById(parentID);
+                if (parentNode.getFeature("frontier")) {
+                  //its parent is a frontier, too -> there should be on-path nodes to score
+                  let actualPart = parentNode.getFeature("partition");
+                  let actualDist = DijkstraResults[actualPart][1];
+                  let actualSigma = DijkstraResults[actualPart][0];
+                  for (let nodeID in actualDist) {
+                    if (actualDist[parentID][frontID] === actualDist[parentID][nodeID] + actualDist[nodeID][frontID]) {
+                      //on-path node
+                      delta[nodeID] = 0;
+                      delta[nodeID] +=
+                        (sigma[s][parentID] * actualSigma[parentID][nodeID] * sigma[nodeID][frontID] / sigma[s][frontID] * (0 + delta[frontID]));
+                      BCdict[nodeID] += delta[nodeID];
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      for (let w in Pred) {
+        dist[w] = Number.POSITIVE_INFINITY;
         sigma[w] = 0;
         delta[w] = 0;
         Pred[w] = [];
       }
     }
   }
-  //case without targetSet needs to be added here
 
+  //no target-set
+  else {
+    for (let part_i in DijkstraResults){
+      for (let part_j in DijkstraResults){
+        if (part_i === part_j){
+          //this case is handled by the Dijkstra_SK already
+          continue;
+        }
+        
+
+
+      }
+    }
+
+
+
+
+  }
 }
+
+
+
 
 
 function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean }): {} {
@@ -476,7 +517,7 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
       for (let ff in frontiers[part]) {
         if (f !== ff) {
           let edgeToAdd = new $E.BaseEdge(part + "_" + f + "_" + ff, skeleton.getNodeById(f), skeleton.getNodeById(ff),
-            { directed: true, weighted: true, weight: allResults[part].dist[f][ff] },
+            { directed: false, weighted: true, weight: allResults[part].dist[f][ff] },
             { "partition": part, "sigma": allResults[part].sigma[f][ff] });
           skeleton.addEdge(edgeToAdd);
         }
