@@ -462,13 +462,37 @@ function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: { [
 
   //no target-set
   else {
-    for (let part_i in DijkstraResults){
-      for (let part_j in DijkstraResults){
-        if (part_i === part_j){
+    for (let part_i in DijkstraResults) {
+      for (let part_j in DijkstraResults) {
+        if (part_i === part_j) {
           //this case is handled by the Dijkstra_SK already
           continue;
         }
-        
+        let sourceDist = DijkstraResults[part_i][1];
+
+        for (let srcID in sourceDist) {
+          let skeleton2 = skeleton.clone();
+          //add source node and edges leading to frontiers of the same SN
+          let srcNode = new $N.BaseNode("src", { "partition": part_i, "frontier": false });
+          skeleton2.addNode(srcNode);
+
+          for (let front in frontiersDict[part_i]) {
+            let newEdge = new $E.BaseEdge("new", srcNode, skeleton.getNodeById(front),
+              { "directed": false, "weighted": true, "weight": sourceDist[srcID][front] });
+            skeleton2.addEdge(newEdge);
+          }
+
+          //now add the dist nodes
+          let destDist = DijkstraResults[part_j][1];
+          for (let destID in destDist){
+            //TODO: continue from here
+          }
+
+
+
+        }
+
+
 
 
       }
