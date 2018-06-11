@@ -8,6 +8,7 @@ import * as $JO from '../search/Johnsons';
 import * as $BF from '../search/BellmanFord';
 import * as $SU from '../utils/structUtils';
 import * as $BH from '../datastructs/binaryHeap';
+import { nbind } from 'q';
 
 
 //do a fake partitioning - will be replaced with a real one later
@@ -57,9 +58,15 @@ function fakePartition(graph: $G.IGraph): {} {
   return result;
 }
 
+
 //one function to handle Brandes++ and Brandes++All (with and without target node set)
 //LOGIC: partitions are labeled with integers starting with 0. Target nodes, if any, will be labeled as partition -1
 function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {}, targetSet?: { [key: string]: boolean }) {
+
+  /**
+   * skeleton is an empty graph here, by default, right?
+   * @todo then I would take the parameter out and initialize an empty graph inside of this function
+   */
 
   //intraSN edges will be sorted similarly as the nodes in the partitions object
   let intraSNedges = {};
@@ -85,6 +92,9 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
   }
 
   //get all edges
+  /**
+   * @todo Don't we have a function for that in some utils?? think so...
+   */
   let dirEdges = graph.getDirEdgesArray();
   let undEdges = graph.getUndEdgesArray();
   let allEdges = dirEdges;
@@ -97,6 +107,10 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
 
   for (let edge of allEdges) {
     let ends = edge.getNodes();
+
+    /**
+     * @todo would write ends.a|.b instead of ends["a"] => just makes it clear it's a defined property somewhere
+     */
     let a_part = ends["a"].getFeatures().partition;
     let b_part = ends["b"].getFeatures().partition;
 
@@ -111,6 +125,7 @@ function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {},
       if (!nodeIDsInSK[ends["a"].getID()]) {
         skeleton.cloneAndAddNode(ends["a"]);
         nodeIDsInSK[ends["a"].getID()] = true;
+        
         if (a_part !== -1) {
           frontiersDict[a_part][ends["a"].getID()] = true;
         }
@@ -191,6 +206,10 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph, BCdict: { [ke
     }
   }
 
+  /**
+   * @todo definitely abstract out to Brandes.ts => split up the methods there!!
+   * => This just results in too much code...
+   */
   //in case there is no targetSet (withTargets ===false), it might be the best to do a real Brandes for this SN
   if (withTargets) {
     for (let s in adjListDict) {
@@ -326,6 +345,7 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph, BCdict: { [ke
 }
 
 //the function that calculates BC for each node of the original graph
+
 function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: { [key: string]: { [key: string]: boolean } }, BCdict: {}, targetSet?: {}): void {
   //this needs to be different if there is /isn't a targetSet
 
@@ -471,6 +491,9 @@ function Brandes_SK(skeleton: $G.IGraph, DijkstraResults: {}, frontiersDict: { [
         let sourceDist = DijkstraResults[part_i][1];
 
         for (let srcID in sourceDist) {
+          /**
+           * @todo cloning the whole skeleton k^2*sourceDist.size times ?!?!
+           */
           let skeleton2 = skeleton.clone();
           //add source node and edges leading to frontiers of the same SN
           let srcNode = new $N.BaseNode("src", { "partition": part_i, "frontier": false });
@@ -518,9 +541,13 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
   let superNodes =
     targetSet ? prepareSuperNode(graph, skeleton, partitions, targetSet) : prepareSuperNode(graph, skeleton, partitions);
 
+  /**
+   * @todo Destructuring!
+   */  
   let parts = superNodes.partitions;
   let intraSN = superNodes.intraSNedges;
   let frontiers = superNodes.frontiersDict;
+  
   //allResults contains all dist and sigma values for node pairs of each partition
   let allResults = {};
   let BCdict = {};
