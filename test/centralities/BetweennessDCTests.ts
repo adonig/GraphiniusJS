@@ -35,7 +35,7 @@ describe('test divide and conquer', () => {
     let SNresults = $DC.prepareSuperNode(graph, skeleton, parts);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict, false);
+    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict);
 
 
   });
@@ -49,7 +49,7 @@ describe('test divide and conquer', () => {
     let SNresults = $DC.prepareSuperNode(graph, skeleton, parts, targets);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict, true);
+    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict);
     console.log(result.sigma[52]);
 
 
@@ -60,7 +60,7 @@ describe('test divide and conquer', () => {
 
     let targets = { "1": true, "3": true, "5": true };
     $DC.BrandesDCmain(graph, targets);
-   // $DC.BrandesDCmain(graph);
+    $DC.BrandesDCmain(graph);
 
 
   });
