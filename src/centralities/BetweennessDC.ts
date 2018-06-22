@@ -159,7 +159,7 @@ export interface BrandesHeapEntry {
   best: number;
 }
 
-function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph, BCdict: { [key: string]: number }) {
+function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
   //first make the adjListDict
   let adjListDict = {};
   for (let key in nodeList) {
@@ -656,7 +656,7 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
 
   //TODO LATER: these will be processed by multiple threads
   for (let key in parts) {
-    let result = Dijkstra_SK(parts[key], intraSN[key], graph, BCdict);
+    let result = Dijkstra_SK(parts[key], intraSN[key], graph);
     allResults[key] = result;
   }
 

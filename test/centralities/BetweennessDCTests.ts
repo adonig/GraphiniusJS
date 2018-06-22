@@ -30,12 +30,11 @@ describe('test divide and conquer', () => {
   it('label partition and frontier-boolean in each nodes features', () => {
     let graph = graph_midSizeGraph;
     let skeleton = new $G.BaseGraph("SK");
-    let BCdict = {};
     let parts = $DC.fakePartition(graph);
     let SNresults = $DC.prepareSuperNode(graph, skeleton, parts);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict);
+    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph);
 
 
   });
@@ -43,13 +42,12 @@ describe('test divide and conquer', () => {
   it('label partition and frontier-boolean correctly if there is a targetSet', () => {
     let graph = graph_midSizeGraph;
     let skeleton = new $G.BaseGraph("SK");
-    let BCdict = {};
     let targets = { "1": true, "3": true, "5": true };
     let parts = $DC.fakePartition(graph);
     let SNresults = $DC.prepareSuperNode(graph, skeleton, parts, targets);
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
-    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph, BCdict);
+    let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph);
     console.log(result.sigma[52]);
 
 
