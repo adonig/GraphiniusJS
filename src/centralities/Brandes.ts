@@ -72,7 +72,7 @@ function BrandesUnweighted(graph: $G.IGraph, normalize: boolean = false, directe
 
         let counter = 0;
 
-        while ( Q.length ) { //Queue not empty
+        while (Q.length) { //Queue not empty
             v = Q.shift();
             S.push(v);
             let neighbors = adjList[v];
@@ -128,7 +128,7 @@ export interface BrandesHeapEntry {
     best: number;
 }
 
-function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean): {} {
+function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean, sources?: string[], scoreLogic?: Function, returnMore?: boolean, BCdict?: {}): {} {
 
     if (graph.nrDirEdges() === 0 && graph.nrUndEdges() === 0) {
         throw new Error("Cowardly refusing to traverse graph without edges.");
@@ -151,7 +151,8 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
     }
 
     let nodes = graph.getNodes();
-    let N = Object.keys(nodes).length;
+    let nodeKeys = Object.keys(nodes);
+    let N = nodeKeys.length;
     let adjList = graph.adjListDict();
 
     const evalPriority = (nb: BrandesHeapEntry) => nb.best;
@@ -167,23 +168,33 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
         delta: { [key: string]: number } = {}, //dependency of source node s on a node 
         dist: { [key: string]: number } = {},  //distances from source node s to each node
         S: string[] = [],     //stack of nodeIDs - nodes waiting for their dependency values
-        CB: { [key: string]: number } = {},  //Betweenness values for each node
+        //if an existing BCdict is given as parameter, then work with that
+        CB: { [key: string]: number } = BCdict ? BCdict : {},  //Betweenness values for each node
         closedNodes: { [key: string]: boolean } = {},
+        bigDist: {} = {},
+        bigPred: {} = {},
+        bigDelta: {} = {},
+        bigSigma: {} = {},
         Q: $BH.BinaryHeap = new $BH.BinaryHeap($BH.BinaryHeapMode.MIN, evalPriority, evalObjID);
 
-    for (let n in nodes) {
-        let currID = nodes[n].getID();
-        CB[currID] = 0;
-        dist[currID] = Number.POSITIVE_INFINITY;
-        sigma[currID] = 0;
-        delta[currID] = 0;
-        Pred[currID] = [];
-        closedNodes[currID] = false;
-    }
+    let sourceIDs: string[] = sources ? sources : nodeKeys;
 
-    for (let i in nodes) {
+    for (let i of sourceIDs) {
+
+        for (let n in nodes) {
+            let currID = nodes[n].getID();
+            //initialize it only if this node is not yet in
+            if (!CB[currID]) {
+                CB[currID] = 0;
+            }
+            dist[currID] = Number.POSITIVE_INFINITY;
+            sigma[currID] = 0;
+            delta[currID] = 0;
+            Pred[currID] = [];
+            closedNodes[currID] = false;
+        }
+
         s = nodes[i];
-
         let id_s = s.getID();
         dist[id_s] = 0;
         sigma[id_s] = 1;
@@ -191,7 +202,7 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
         let source: BrandesHeapEntry = { id: id_s, best: 0 };
         Q.insert(source);
         closedNodes[id_s] = true;
-        
+
         while (Q.size() > 0) {
 
             v = Q.pop();
@@ -206,7 +217,7 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
                 if (closedNodes[w]) {
                     continue;
                 }
-                
+
                 let new_dist = dist[current_id] + neighbors[w];
                 let nextNode: BrandesHeapEntry = { id: w, best: dist[w] };
                 if (dist[w] > new_dist) {
@@ -232,21 +243,15 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
         }
 
         // Accumulation: back-propagation of dependencies
-        while (S.length >= 1) {
-            w = S.pop();
-            for (let parent of Pred[w]) {
-                delta[parent] += (sigma[parent] / sigma[w] * (1 + delta[w]));
-            }
-            if (w != s.getID()) {
-                CB[w] += delta[w];
-            }
+        let scoring: Function = scoreLogic ? scoreLogic : defaultScoring;
 
-            // reset
-            sigma[w] = 0;
-            delta[w] = 0;
-            dist[w] = Number.POSITIVE_INFINITY;
-            Pred[w] = [];
-            closedNodes[w] = false;
+        scoring(i, S, graph, sigma, delta, dist, Pred, closedNodes, CB);
+
+        if (returnMore) {
+            bigDist[i] = dist;
+            bigPred[i] = Pred;
+            bigDelta[i] = delta;
+            bigSigma[i] = sigma;
         }
     }
 
@@ -254,14 +259,29 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
         normalizeScores(CB, N, directed);
     }
 
-    return CB;
+    let returnObj: {} = returnMore ? { CB, bigDist, bigPred, bigDelta, bigSigma } : CB;
+
+    return returnObj;
+}
+
+function defaultScoring(sID: string, S: string[], graph: $G.IGraph, sigma: {}, delta: {}, dist: {}, Pred: {}, closedNodes: {}, CB: {}): void {
+    let s = graph.getNodeById(sID);
+    while (S.length >= 1) {
+        let w = S.pop();
+        for (let parent of Pred[w]) {
+            delta[parent] += (sigma[parent] / sigma[w] * (1 + delta[w]));
+        }
+        if (w != s.getID()) {
+            CB[w] += delta[w];
+        }
+    }
 }
 
 /**
  * 
  * @param graph 
  * @param normalize 
- * @param directed 
+ * @param directed - needed for normalization
  * 
  * @todo decide to remove or not
  */
@@ -323,7 +343,7 @@ function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean
         let current_id = context.current.node.getID();
 
         sigma[next_id] += sigma[current_id];
-        
+
         //other approach needed to avoid duplicates
         if (Pred[next_id].indexOf(current_id) === -1) {
             Pred[next_id].push(current_id);
