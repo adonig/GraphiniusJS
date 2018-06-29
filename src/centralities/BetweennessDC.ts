@@ -140,6 +140,8 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
       edge.setFeature("partition", a_part);
     }
   }
+  console.log("skeleton just after making, nr nodes");
+  console.log(skeleton.nrNodes());
   return { partitions, intraSNedges, frontiersDict, skeleton };
 }
 
@@ -239,19 +241,28 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
   return { sigma, dist };
 }
 
-function SkeletonScoring(sID: string, S: string[], graph: $G.IGraph, sigma: {}, delta: {}, dist: {}, Pred: {}, closedNodes: {}, CB: {}, resetNeeded: boolean): void {
+function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {}, delta: {}, dist: {}, Pred: {}, closedNodes: {}, CB: {}, resetNeeded: boolean): void {
   while (S.length >= 1) {
     let w = S.pop();
-    for (let parent of Pred[w]) {
-      let multi = graph.getUndEdgeByNodeIDs(parent, w).getFeature("sigma");
-      if (graph.getNodeById(w).getFeature("frontier")) {
-        delta[parent] += (sigma[parent] / sigma[w] * multi * (0 + delta[w]));
-      }
-      else {
-        //target nodes (if target set is given) are not frontiers so they lead to here
-        delta[parent] += (sigma[parent] / sigma[w] * multi * (1 + delta[w]));
+    console.log(skeleton.nrUndEdges());
+    console.log(skeleton.nrNodes());
+    if (Pred[w].length) {
+      for (let parent of Pred[w]) {
+        let multi = skeleton.getUndEdgeByNodeIDs(parent, w).getFeature("sigma");
+        if (multi === undefined) {
+          multi = skeleton.getDirEdgeByNodeIDs(parent, w).getFeature("sigma");
+        }
+
+        if (skeleton.getNodeById(w).getFeature("frontier")) {
+          delta[parent] += (sigma[parent] / sigma[w] * multi * (0 + delta[w]));
+        }
+        else {
+          //target nodes (if target set is given) are not frontiers so they lead to here
+          delta[parent] += (sigma[parent] / sigma[w] * multi * (1 + delta[w]));
+        }
       }
     }
+
 
     if (w !== sID) {
       CB[w] += delta[w];
@@ -261,13 +272,13 @@ function SkeletonScoring(sID: string, S: string[], graph: $G.IGraph, sigma: {}, 
 }
 
 function FindAndScoreOnPathNodes(BResult: {}, targetSet: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}): {} {
-  let BCdict = BResult[0];
-  let SKdist = BResult[1];
-  let SKPred = BResult[2];
-  let SKdelta = BResult[3];
-  let SKsigma = BResult[4];
+  let BCdict = BResult["CB"];
+  let SKdist = BResult["bigDist"];
+  let SKPred = BResult["bigPred"];
+  let SKdelta = BResult["bigDelta"];
+  let SKsigma = BResult["bigSigma"];
 
-  for (let s in BCdict) {
+  for (let s in SKdist) {
     let dist = SKdist[s];
     let Pred = SKPred[s];
     let delta = SKdelta[s];
@@ -286,8 +297,8 @@ function FindAndScoreOnPathNodes(BResult: {}, targetSet: {}, frontiersDict: {}, 
               let parentNode = skeleton.getNodeById(parentID);
               if (parentNode.getFeature("frontier") && frontiersDict[partID][parentID] !== undefined) {
                 //its parent is a frontier from the same supernode -> there should be on-path nodes to score
-                let actualDist = DijkstraResults[partID][1];
-                let actualSigma = DijkstraResults[partID][0];
+                let actualDist = DijkstraResults[partID]["dist"];
+                let actualSigma = DijkstraResults[partID]["sigma"];
                 for (let nodeID in actualDist) {
                   //if this is a frontier node, it has been handled earlier
                   if (frontiersDict[partID][nodeID] !== undefined) {
@@ -321,8 +332,9 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
     //first modify the skeleton
     //use Dijkstraresults, make all added edges directed
     for (let part_i in DijkstraResults) {
-      let isourceDist = DijkstraResults[part_i][1];
-      let isourceSigma = DijkstraResults[part_i][0];
+      let isourceDist = DijkstraResults[part_i]["dist"];
+      let isourceSigma = DijkstraResults[part_i]["sigma"];
+
       for (let id in isourceDist) {
         let node = graph.getNodeById(id);
         //no need to handle frontier nodes, they are added already
@@ -339,8 +351,8 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
       }
 
       for (let part_j in DijkstraResults) {
-        let jsourceDist = DijkstraResults[part_j][1];
-        let jsourceSigma = DijkstraResults[part_j][0];
+        let jsourceDist = DijkstraResults[part_j]["dist"];
+        let jsourceSigma = DijkstraResults[part_j]["sigma"];
 
         //missing part! part_i===part_j not yet handled!
         if (part_i !== part_j) {
@@ -412,6 +424,7 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
   let frontiers = superNodes.frontiersDict;
   let skeleton = superNodes.skeleton;
 
+  
   //allResults contains all dist and sigma values for node pairs of each partition
   let allResults = {};
   let nodes = graph.getNodes();
@@ -436,9 +449,24 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
     }
   }
 
+  
+  
   let finalRes = (targetSet !== undefined) ? Brandes_SK(skeleton, graph, allResults, frontiers, targetSet) : Brandes_SK(skeleton, graph, allResults, frontiers);
 
   return (finalRes);
 }
 
 export { fakePartition, prepareSuperNode, Dijkstra_SK, BrandesDCmain }
+
+/**
+ * Just for debugging
+ */
+
+import * as $JSON from '../../src/io/input/JSONInput';
+const json: $JSON.IJSONInput = new $JSON.JSONInput(true, false, true);
+const PATH_PREFIX = "./test/test_data/";
+
+let path_midSizeGraph = PATH_PREFIX + "bernd_ares_intermediate_pos.json";
+let graph_midSizeGraph = json.readFromJSONFile(path_midSizeGraph);
+
+BrandesDCmain(graph_midSizeGraph);

@@ -58,7 +58,7 @@ describe('test divide and conquer', () => {
 
     let targets = { "1": true, "3": true, "5": true };
     $DC.BrandesDCmain(graph, targets);
-    $DC.BrandesDCmain(graph);
+    //$DC.BrandesDCmain(graph);
 
 
   });
