@@ -111,7 +111,7 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
         ends.a.setFeature("frontier", false);
       b_part !== -1 ? ends.b.setFeature("frontier", true) :
         ends.b.setFeature("frontier", false);
-      if (!nodeIDsInSK[ends.a.getID()]) {
+      if (nodeIDsInSK[ends.a.getID()] === undefined) {
         skeleton.cloneAndAddNode(ends.a);
         nodeIDsInSK[ends.a.getID()] = true;
 
@@ -120,7 +120,7 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
         }
       }
 
-      if (!nodeIDsInSK[ends.b.getID()]) {
+      if (nodeIDsInSK[ends.b.getID()] === undefined) {
         skeleton.cloneAndAddNode(ends.b);
         nodeIDsInSK[ends.b.getID()] = true;
 
@@ -140,8 +140,7 @@ function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: { [key: 
       edge.setFeature("partition", a_part);
     }
   }
-  console.log("skeleton just after making, nr nodes");
-  console.log(skeleton.nrNodes());
+
   return { partitions, intraSNedges, frontiersDict, skeleton };
 }
 
@@ -244,13 +243,19 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
 function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {}, delta: {}, dist: {}, Pred: {}, closedNodes: {}, CB: {}, resetNeeded: boolean): void {
   while (S.length >= 1) {
     let w = S.pop();
-    console.log(skeleton.nrUndEdges());
-    console.log(skeleton.nrNodes());
+
     if (Pred[w].length) {
       for (let parent of Pred[w]) {
         let multi = skeleton.getUndEdgeByNodeIDs(parent, w).getFeature("sigma");
+        //tried to resolve this, stil can not
+        if (multi === undefined) {
+          multi = skeleton.getUndEdgeByNodeIDs(w, parent).getFeature("sigma");
+        }
         if (multi === undefined) {
           multi = skeleton.getDirEdgeByNodeIDs(parent, w).getFeature("sigma");
+        }
+        if (multi === undefined) {
+          multi = skeleton.getDirEdgeByNodeIDs(w, parent).getFeature("sigma");
         }
 
         if (skeleton.getNodeById(w).getFeature("frontier")) {
@@ -327,7 +332,6 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
     let BResult: {} = $B.BrandesWeighted(skeleton, false, false, Object.keys(targetSet), SkeletonScoring, true);
     BCdict = FindAndScoreOnPathNodes(BResult, targetSet, frontiersDict, skeleton, DijkstraResults);
   }
-
   else {
     //first modify the skeleton
     //use Dijkstraresults, make all added edges directed
@@ -405,7 +409,6 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
         skeleton.deleteNode(node);
       }
     }
-
   }
   return BCdict;
 }
@@ -424,7 +427,16 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
   let frontiers = superNodes.frontiersDict;
   let skeleton = superNodes.skeleton;
 
-  
+  //just for debugging
+  // let numFr=0;
+  // for (let x in frontiers){
+  //   for (let y in frontiers[x]){
+  //     numFr++;
+  //   }
+  // }
+  // console.log("number of frontiers: "+numFr);
+
+
   //allResults contains all dist and sigma values for node pairs of each partition
   let allResults = {};
   let nodes = graph.getNodes();
@@ -449,24 +461,23 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
     }
   }
 
-  
-  
   let finalRes = (targetSet !== undefined) ? Brandes_SK(skeleton, graph, allResults, frontiers, targetSet) : Brandes_SK(skeleton, graph, allResults, frontiers);
+
+  //if there is no target set, case i===j needs to be handled here
+  for (let part in parts){
+    let tempGraph = new $G.BaseGraph("temp");
+    for (let nodeID in parts[part]){
+      tempGraph.cloneAndAddNode(graph.getNodeById(nodeID));
+    }
+    for (let edgeID in intraSN[part]){
+      tempGraph.cloneAndAddEdge(graph.getEdgeById(edgeID));
+    }
+    finalRes= $B.BrandesWeighted(tempGraph, false, false);
+  }
 
   return (finalRes);
 }
 
 export { fakePartition, prepareSuperNode, Dijkstra_SK, BrandesDCmain }
 
-/**
- * Just for debugging
- */
 
-import * as $JSON from '../../src/io/input/JSONInput';
-const json: $JSON.IJSONInput = new $JSON.JSONInput(true, false, true);
-const PATH_PREFIX = "./test/test_data/";
-
-let path_midSizeGraph = PATH_PREFIX + "bernd_ares_intermediate_pos.json";
-let graph_midSizeGraph = json.readFromJSONFile(path_midSizeGraph);
-
-BrandesDCmain(graph_midSizeGraph);
