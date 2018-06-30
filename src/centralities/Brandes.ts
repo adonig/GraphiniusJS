@@ -179,6 +179,8 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
 
     let sourceIDs: string[] = sources ? sources : nodeKeys;
 
+    console.log(nodeKeys);
+
     for (let i of sourceIDs) {
 
         for (let n in nodes) {

@@ -255,8 +255,8 @@ function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {
           edge = skeleton.getDirEdgeByNodeIDs(parent, w)
         }
 
-        if (edge ===undefined){
-          edge= skeleton.getDirEdgeByNodeIDs(w, parent);
+        if (edge === undefined) {
+          edge = skeleton.getDirEdgeByNodeIDs(w, parent);
         }
 
         let multi = edge.getFeature("sigma");
@@ -278,7 +278,7 @@ function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {
   }
 }
 
-function FindAndScoreOnPathNodes(BResult: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}, targetSet : {}): {} {
+function FindAndScoreOnPathNodes(BResult: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}, targetSet: {}): {} {
   let BCdict = BResult["CB"];
   let SKdist = BResult["bigDist"];
   let SKPred = BResult["bigPred"];
@@ -327,7 +327,7 @@ function FindAndScoreOnPathNodes(BResult: {}, frontiersDict: {}, skeleton: $G.IG
   return BCdict;
 }
 
-function FindAndScoreOnPathNodesNoTarget(BResult: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}, startSet:{}, tgtSet: {} ): {} {
+function FindAndScoreOnPathNodesNoTarget(BResult: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}, startSet: {}, tgtSet: {}): {} {
   let BCdict = BResult["CB"];
   let SKdist = BResult["bigDist"];
   let SKPred = BResult["bigPred"];
@@ -341,7 +341,7 @@ function FindAndScoreOnPathNodesNoTarget(BResult: {}, frontiersDict: {}, skeleto
     let sigma = SKsigma[s];
 
     for (let targetID in tgtSet) {
-      
+
       for (let partID in frontiersDict) {
         for (let frontID in frontiersDict[partID]) {
           if (SKdist[s][targetID] === dist[s][frontID] + dist[frontID][targetID]) {
@@ -404,6 +404,9 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
       }
 
       for (let part_j in DijkstraResults) {
+        if (part_i === part_j) {
+          continue;
+        }
         let jsourceDist = DijkstraResults[part_j]["dist"];
         let jsourceSigma = DijkstraResults[part_j]["sigma"];
 
@@ -430,13 +433,13 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
           let targetNodes: string[] = Object.keys(jsourceDist);
           if (part_i === "0" && part_j === "1") {
             //BCdict not yet initialized
-            console.log("skeleton nrNodes when new nodes are added: "+skeleton.nrNodes());
+            console.log("skeleton nrNodes when new nodes are added: " + skeleton.nrNodes());
             BResult = $B.BrandesWeighted(skeleton, false, false, startNodes, SkeletonScoring, true);
-            BCdict = FindAndScoreOnPathNodesNoTarget(BResult,frontiersDict, skeleton, DijkstraResults, startNodes, targetNodes);
+            BCdict = FindAndScoreOnPathNodesNoTarget(BResult, frontiersDict, skeleton, DijkstraResults, startNodes, targetNodes);
           }
           else {
             BResult = $B.BrandesWeighted(skeleton, false, false, startNodes, SkeletonScoring, true, BCdict);
-            BCdict = FindAndScoreOnPathNodesNoTarget(BResult,frontiersDict, skeleton, DijkstraResults, startNodes, targetNodes);
+            BCdict = FindAndScoreOnPathNodesNoTarget(BResult, frontiersDict, skeleton, DijkstraResults, startNodes, targetNodes);
           }
 
         }
@@ -514,16 +517,17 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
 
   let finalRes = (targetSet !== undefined) ? Brandes_SK(skeleton, graph, allResults, frontiers, targetSet) : Brandes_SK(skeleton, graph, allResults, frontiers);
 
-  //if there is no target set, case i===j needs to be handled here
-  for (let part in parts) {
-    let tempGraph = new $G.BaseGraph("temp");
-    for (let nodeID in parts[part]) {
-      tempGraph.cloneAndAddNode(graph.getNodeById(nodeID));
+  if (!targetSet) {
+    for (let part in parts) {
+      let tempGraph = new $G.BaseGraph("temp");
+      for (let nodeID in parts[part]) {
+        tempGraph.cloneAndAddNode(graph.getNodeById(nodeID));
+      }
+      for (let edgeID in intraSN[part]) {
+        tempGraph.cloneAndAddEdge(graph.getEdgeById(edgeID));
+      }
+      finalRes = $B.BrandesWeighted(tempGraph, false, false);
     }
-    for (let edgeID in intraSN[part]) {
-      tempGraph.cloneAndAddEdge(graph.getEdgeById(edgeID));
-    }
-    finalRes = $B.BrandesWeighted(tempGraph, false, false);
   }
 
   return (finalRes);

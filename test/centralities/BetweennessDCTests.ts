@@ -55,7 +55,8 @@ describe('test divide and conquer', () => {
     let graph = graph_midSizeGraph;
 
     let targets = { "1": true, "3": true, "5": true };
-    //$DC.BrandesDCmain(graph, targets);
-    $DC.BrandesDCmain(graph);
+    let res= $DC.BrandesDCmain(graph, targets);
+    console.log(res);
+    //$DC.BrandesDCmain(graph);
   });
 });
