@@ -185,7 +185,6 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
 
   //here this is just a graph traversal (a specialized Dijkstra's)
   for (let s in adjListDict) {
-
     closedNodes = {};
     dist[s][s] = 0;
     sigma[s][s] = 1;
@@ -240,23 +239,27 @@ function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph) {
   return { sigma, dist };
 }
 
-function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {}, delta: {}, dist: {}, Pred: {}, closedNodes: {}, CB: {}, resetNeeded: boolean): void {
+function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {}, delta: {}, dist: {}, Pred: {}, closedNodes: {}, CB: {}): void {
   while (S.length >= 1) {
     let w = S.pop();
 
     if (Pred[w].length) {
       for (let parent of Pred[w]) {
-        let multi = skeleton.getUndEdgeByNodeIDs(parent, w).getFeature("sigma");
-        //tried to resolve this, stil can not
-        if (multi === undefined) {
-          multi = skeleton.getUndEdgeByNodeIDs(w, parent).getFeature("sigma");
+        let edge = skeleton.getUndEdgeByNodeIDs(parent, w);
+
+        if (edge === undefined) {
+          edge = skeleton.getUndEdgeByNodeIDs(w, parent);
         }
-        if (multi === undefined) {
-          multi = skeleton.getDirEdgeByNodeIDs(parent, w).getFeature("sigma");
+
+        if (edge === undefined) {
+          edge = skeleton.getDirEdgeByNodeIDs(parent, w)
         }
-        if (multi === undefined) {
-          multi = skeleton.getDirEdgeByNodeIDs(w, parent).getFeature("sigma");
+
+        if (edge ===undefined){
+          edge= skeleton.getDirEdgeByNodeIDs(w, parent);
         }
+
+        let multi = edge.getFeature("sigma");
 
         if (skeleton.getNodeById(w).getFeature("frontier")) {
           delta[parent] += (sigma[parent] / sigma[w] * multi * (0 + delta[w]));
@@ -268,7 +271,6 @@ function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {
       }
     }
 
-
     if (w !== sID) {
       CB[w] += delta[w];
     }
@@ -276,7 +278,7 @@ function SkeletonScoring(sID: string, S: string[], skeleton: $G.IGraph, sigma: {
   }
 }
 
-function FindAndScoreOnPathNodes(BResult: {}, targetSet: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}): {} {
+function FindAndScoreOnPathNodes(BResult: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}, targetSet : {}): {} {
   let BCdict = BResult["CB"];
   let SKdist = BResult["bigDist"];
   let SKPred = BResult["bigPred"];
@@ -325,12 +327,59 @@ function FindAndScoreOnPathNodes(BResult: {}, targetSet: {}, frontiersDict: {}, 
   return BCdict;
 }
 
+function FindAndScoreOnPathNodesNoTarget(BResult: {}, frontiersDict: {}, skeleton: $G.IGraph, DijkstraResults: {}, startSet:{}, tgtSet: {} ): {} {
+  let BCdict = BResult["CB"];
+  let SKdist = BResult["bigDist"];
+  let SKPred = BResult["bigPred"];
+  let SKdelta = BResult["bigDelta"];
+  let SKsigma = BResult["bigSigma"];
+
+  for (let s in startSet) {
+    let dist = SKdist[s];
+    let Pred = SKPred[s];
+    let delta = SKdelta[s];
+    let sigma = SKsigma[s];
+
+    for (let targetID in tgtSet) {
+      
+      for (let partID in frontiersDict) {
+        for (let frontID in frontiersDict[partID]) {
+          if (SKdist[s][targetID] === dist[s][frontID] + dist[frontID][targetID]) {
+            //frontier node on-path
+            for (let parentID of Pred[frontID]) {
+
+              let parentNode = skeleton.getNodeById(parentID);
+              if (parentNode.getFeature("frontier") && frontiersDict[partID][parentID] !== undefined) {
+                //its parent is a frontier from the same supernode -> there should be on-path nodes to score
+                let actualDist = DijkstraResults[partID]["dist"];
+                let actualSigma = DijkstraResults[partID]["sigma"];
+                for (let nodeID in actualDist) {
+                  //if this is a frontier node, it has been handled earlier
+                  if (frontiersDict[partID][nodeID] !== undefined) {
+                    continue;
+                  }
+                  if (actualDist[parentID][frontID] === actualDist[parentID][nodeID] + actualDist[nodeID][frontID]) {
+                    //on-path node
+                    delta[nodeID] = (sigma[s][parentID] * actualSigma[parentID][nodeID] * sigma[nodeID][frontID] / sigma[s][frontID] * (0 + delta[frontID]));
+                    BCdict[nodeID] += delta[nodeID];
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return BCdict;
+}
+
 function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, frontiersDict: { [key: string]: { [key: string]: boolean } }, targetSet?: {}): {} {
   let BCdict: {};
 
   if (targetSet) {
     let BResult: {} = $B.BrandesWeighted(skeleton, false, false, Object.keys(targetSet), SkeletonScoring, true);
-    BCdict = FindAndScoreOnPathNodes(BResult, targetSet, frontiersDict, skeleton, DijkstraResults);
+    BCdict = FindAndScoreOnPathNodes(BResult, frontiersDict, skeleton, DijkstraResults, targetSet);
   }
   else {
     //first modify the skeleton
@@ -378,14 +427,15 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
           let BCdict: {};
           let BResult: {};
           let startNodes: string[] = Object.keys(isourceDist);
+          let targetNodes: string[] = Object.keys(jsourceDist);
           if (part_i === "0" && part_j === "0") {
             //BCdict not yet initialized
             BResult = $B.BrandesWeighted(skeleton, false, false, startNodes, SkeletonScoring, true);
-            BCdict = FindAndScoreOnPathNodes(BResult, targetSet, frontiersDict, skeleton, DijkstraResults);
+            BCdict = FindAndScoreOnPathNodesNoTarget(BResult,frontiersDict, skeleton, DijkstraResults, startNodes, targetNodes);
           }
           else {
             BResult = $B.BrandesWeighted(skeleton, false, false, startNodes, SkeletonScoring, true, BCdict);
-            BCdict = FindAndScoreOnPathNodes(BResult, targetSet, frontiersDict, skeleton, DijkstraResults);
+            BCdict = FindAndScoreOnPathNodesNoTarget(BResult,frontiersDict, skeleton, DijkstraResults, startNodes, targetNodes);
           }
 
         }
@@ -464,15 +514,15 @@ function BrandesDCmain(graph: $G.IGraph, targetSet?: { [key: string]: boolean })
   let finalRes = (targetSet !== undefined) ? Brandes_SK(skeleton, graph, allResults, frontiers, targetSet) : Brandes_SK(skeleton, graph, allResults, frontiers);
 
   //if there is no target set, case i===j needs to be handled here
-  for (let part in parts){
+  for (let part in parts) {
     let tempGraph = new $G.BaseGraph("temp");
-    for (let nodeID in parts[part]){
+    for (let nodeID in parts[part]) {
       tempGraph.cloneAndAddNode(graph.getNodeById(nodeID));
     }
-    for (let edgeID in intraSN[part]){
+    for (let edgeID in intraSN[part]) {
       tempGraph.cloneAndAddEdge(graph.getEdgeById(edgeID));
     }
-    finalRes= $B.BrandesWeighted(tempGraph, false, false);
+    finalRes = $B.BrandesWeighted(tempGraph, false, false);
   }
 
   return (finalRes);
