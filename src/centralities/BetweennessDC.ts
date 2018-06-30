@@ -407,19 +407,19 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
         let jsourceDist = DijkstraResults[part_j]["dist"];
         let jsourceSigma = DijkstraResults[part_j]["sigma"];
 
-        //missing part! part_i===part_j not yet handled!
+        //missing part, part_i===part_j - handled separately in BrandesDCmain
         if (part_i !== part_j) {
-          for (let id in jsourceDist) {
-            let node = graph.getNodeById(id);
+          for (let jd in jsourceDist) {
+            let node = graph.getNodeById(jd);
             //no need to handle frontier nodes, they are added already
             if (node.getFeature("frontier")) {
               continue;
             }
             skeleton.cloneAndAddNode(node);
             for (let fr in frontiersDict[part_j]) {
-              let edgeToAdd = new $E.BaseEdge("", skeleton.getNodeById(fr), skeleton.getNodeById(id),
-                { directed: true, weighted: true, weight: jsourceDist[fr][id] },
-                { "partition": part_j, "sigma": jsourceSigma[fr][id] });
+              let edgeToAdd = new $E.BaseEdge("", skeleton.getNodeById(fr), skeleton.getNodeById(jd),
+                { directed: true, weighted: true, weight: jsourceDist[fr][jd] },
+                { "partition": part_j, "sigma": jsourceSigma[fr][jd] });
               skeleton.addEdge(edgeToAdd);
             }
           }
@@ -428,8 +428,9 @@ function Brandes_SK(skeleton: $G.IGraph, graph: $G.IGraph, DijkstraResults: {}, 
           let BResult: {};
           let startNodes: string[] = Object.keys(isourceDist);
           let targetNodes: string[] = Object.keys(jsourceDist);
-          if (part_i === "0" && part_j === "0") {
+          if (part_i === "0" && part_j === "1") {
             //BCdict not yet initialized
+            console.log("skeleton nrNodes when new nodes are added: "+skeleton.nrNodes());
             BResult = $B.BrandesWeighted(skeleton, false, false, startNodes, SkeletonScoring, true);
             BCdict = FindAndScoreOnPathNodesNoTarget(BResult,frontiersDict, skeleton, DijkstraResults, startNodes, targetNodes);
           }
