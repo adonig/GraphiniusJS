@@ -352,7 +352,7 @@ declare module 'graphinius/datastructs/binaryHeap' {
 	/// <reference path="../../typings/tsd.d.ts" />
 	export enum BinaryHeapMode {
 	    MIN = 0,
-	    MAX = 1,
+	    MAX = 1
 	}
 	export interface PositionHeapEntry {
 	    score: number;
@@ -407,24 +407,24 @@ declare module 'graphinius/datastructs/binaryHeap' {
 	     */
 	    insert(obj: any): void;
 	    remove(obj: any): any;
-	    private trickleDown(i);
-	    private trickleUp(i);
-	    private orderCorrect(obj_a, obj_b);
+	    private trickleDown;
+	    private trickleUp;
+	    private orderCorrect;
 	    /**
 	     * Superstructure to enable search in BinHeap in O(1)
 	     * @param obj
 	     * @param pos
 	     */
-	    private setNodePosition(obj, pos);
+	    private setNodePosition;
 	    /**
 	     *
 	     */
-	    private getNodePosition(obj);
+	    private getNodePosition;
 	    /**
 	     * @param obj
 	     * @returns {number}
 	     */
-	    private removeNodePosition(obj);
+	    private removeNodePosition;
 	}
 	export { BinaryHeap };
 
@@ -517,7 +517,7 @@ declare module 'graphinius/core/Graph' {
 	    INIT = 0,
 	    DIRECTED = 1,
 	    UNDIRECTED = 2,
-	    MIXED = 3,
+	    MIXED = 3
 	}
 	export interface GraphStats {
 	    mode: GraphMode;
@@ -686,7 +686,7 @@ declare module 'graphinius/core/Graph' {
 	    deleteNode(node: any): void;
 	    hasEdgeID(id: string): boolean;
 	    getEdgeById(id: string): $E.IBaseEdge;
-	    private checkExistanceOfEdgeNodes(node_a, node_b);
+	    private checkExistanceOfEdgeNodes;
 	    getDirEdgeByNodeIDs(node_a_id: string, node_b_id: string): $E.IBaseEdge;
 	    getUndEdgeByNodeIDs(node_a_id: string, node_b_id: string): $E.IBaseEdge;
 	    getDirEdges(): {
@@ -860,7 +860,7 @@ declare module 'graphinius/centralities/Degree' {
 	    out = 1,
 	    und = 2,
 	    dir = 3,
-	    all = 4,
+	    all = 4
 	}
 	/**
 	 * @TODO per edge type ???
@@ -1075,13 +1075,13 @@ declare module 'graphinius/io/input/CSVInput' {
 	    constructor(_separator?: string, _explicit_direction?: boolean, _direction_mode?: boolean, _weighted?: boolean);
 	    readFromAdjacencyListURL(config: $R.RequestConfig, cb: Function): void;
 	    readFromEdgeListURL(config: $R.RequestConfig, cb: Function): void;
-	    private readGraphFromURL(config, cb, localFun);
+	    private readGraphFromURL;
 	    readFromAdjacencyListFile(filepath: string): $G.IGraph;
 	    readFromEdgeListFile(filepath: string): $G.IGraph;
-	    private readFileAndReturn(filepath, func);
+	    private readFileAndReturn;
 	    readFromAdjacencyList(input: Array<string>, graph_name: string): $G.IGraph;
 	    readFromEdgeList(input: Array<string>, graph_name: string, weighted?: boolean): $G.IGraph;
-	    private checkNodeEnvironment();
+	    private checkNodeEnvironment;
 	}
 	export { CSVInput };
 
@@ -1139,8 +1139,8 @@ declare module 'graphinius/io/input/JSONInput' {
 	     * handles them correctly anyways (for now)
 	     * @param edge_input
 	     */
-	    private handleEdgeWeights(edge_input);
-	    private checkNodeEnvironment();
+	    private handleEdgeWeights;
+	    private checkNodeEnvironment;
 	}
 	export { JSONInput };
 
@@ -1179,7 +1179,7 @@ declare module 'graphinius/io/output/JSONOutput' {
 	    constructor();
 	    writeToJSONFile(filepath: string, graph: $G.IGraph): void;
 	    writeToJSONSString(graph: $G.IGraph): string;
-	    private handleEdgeWeight(edge);
+	    private handleEdgeWeight;
 	}
 	export { JSONOutput };
 
@@ -1280,7 +1280,7 @@ declare module 'graphinius/perturbation/SimplePerturbations' {
 	     * Go through the degree_configuration provided and create edges
 	     * as requested by config
 	     */
-	    private createEdgesByConfig(config, new_nodes);
+	    private createEdgesByConfig;
 	    /**
 	     * Simple edge generator:
 	     * Go through all node combinations, and

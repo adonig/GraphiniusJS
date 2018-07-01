@@ -3,11 +3,10 @@ const clean 					= require('gulp-clean');
 const mocha 					= require('gulp-mocha');
 const ts 							= require('gulp-typescript');
 const tdoc 						= require("gulp-typedoc");
-const concat					= require('gulp-concat');
 const merge 					= require('merge2');
 const webpack 				= require('webpack-stream');
-const uglify 					= require('gulp-uglify');
-const minify 					= require('gulp-minify');
+const uglify 					= require('gulp-uglify-es').default;
+const pump						= require('pump');
 const rename 					= require('gulp-rename');
 const istanbul 				= require('gulp-istanbul');
 const git 						= require('gulp-git');
@@ -127,11 +126,20 @@ gulp.task('pack', ['dts'], function() {
 
 
 // Uglification...
-gulp.task('bundle', ['pack'], function() {
-	return gulp.src('build/graphinius.js')
-		.pipe(minify())
-		.pipe(rename('graphinius.min.js'))
-		.pipe(gulp.dest('build'));
+gulp.task('bundle', ['pack'], cb => {
+	// return gulp.src('build/graphinius.js')
+	// 	.pipe(uglify())
+	// 	.pipe(rename('graphinius.min.js'))
+	// 	.pipe(gulp.dest('build'));
+
+		pump( [
+						gulp.src('build/graphinius.js'),
+						uglify(),
+						rename('graphinius.min.js'),
+						gulp.dest('build')
+					],
+					cb
+		);
 });
 
 
