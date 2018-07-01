@@ -797,36 +797,6 @@ declare module 'graphinius/centralities/Betweenness' {
 	export { betweennessCentrality };
 
 }
-declare module 'graphinius/centralities/BetweennessDC' {
-	/// <reference path="../../typings/tsd.d.ts" />
-	import * as $G from 'graphinius/core/Graph'; function fakePartition(graph: $G.IGraph): {}; function prepareSuperNode(graph: $G.IGraph, skeleton: $G.IGraph, partitions: {}, targetSet?: {
-	    [key: string]: boolean;
-	}): {
-	    partitions: {};
-	    intraSNedges: {};
-	    interSNedges: {};
-	    frontiersDict: {};
-	};
-	export interface BrandesHeapEntry {
-	    id: string;
-	    best: number;
-	} function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph): {
-	    sigma: {
-	        [key: string]: {
-	            [key: string]: number;
-	        };
-	    };
-	    dist: {
-	        [key: string]: {
-	            [key: string]: number;
-	        };
-	    };
-	}; function BrandesDCmain(graph: $G.IGraph, targetSet?: {
-	    [key: string]: boolean;
-	}): $G.IGraph;
-	export { fakePartition, prepareSuperNode, Dijkstra_SK, BrandesDCmain };
-
-}
 declare module 'graphinius/centralities/Brandes' {
 	/// <reference path="../../typings/tsd.d.ts" />
 	/**
@@ -841,8 +811,34 @@ declare module 'graphinius/centralities/Brandes' {
 	export interface BrandesHeapEntry {
 	    id: string;
 	    best: number;
-	} function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean): {}; function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean): {}; function normalizeScores(CB: any, N: any, directed: any): void;
+	} function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean, sources?: any, scoreLogic?: any, returnMore?: boolean, BCdict?: {}): {}; function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean): {}; function normalizeScores(CB: any, N: any, directed: any): void;
 	export { BrandesUnweighted, BrandesWeighted, BrandesPFSbased, normalizeScores };
+
+}
+declare module 'graphinius/centralities/BetweennessDC' {
+	/// <reference path="../../typings/tsd.d.ts" />
+	import * as $G from 'graphinius/core/Graph'; function fakePartition(graph: $G.IGraph): {}; function prepareSuperNode(graph: $G.IGraph, partitions: {}, targetSet?: {
+	    [key: string]: boolean;
+	}): {
+	    partitions: {};
+	    intraSNedges: {};
+	    frontiersDict: {};
+	    skeleton: $G.BaseGraph;
+	}; function Dijkstra_SK(nodeList: {}, edgeList: {}, graph: $G.IGraph): {
+	    sigma: {
+	        [key: string]: {
+	            [key: string]: number;
+	        };
+	    };
+	    dist: {
+	        [key: string]: {
+	            [key: string]: number;
+	        };
+	    };
+	}; function BrandesDCmain(graph: $G.IGraph, targetSet?: {
+	    [key: string]: boolean;
+	}): {};
+	export { fakePartition, prepareSuperNode, Dijkstra_SK, BrandesDCmain };
 
 }
 declare module 'graphinius/centralities/Closeness' {

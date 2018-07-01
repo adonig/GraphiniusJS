@@ -52,15 +52,16 @@ describe('test divide and conquer', () => {
     let partitions = SNresults.partitions,
       intraSNedges = SNresults.intraSNedges;
     let result = $DC.Dijkstra_SK(partitions[0], intraSNedges[0], graph);
-    console.log(result.sigma[52]);
+    logger.log(result.sigma[52]);
   });
 
-  it.only('check if BrandesDCmain runs', () => {
+  it('check if BrandesDCmain runs', () => {
     let graph = graph_10;
 
     let targets = { "1": true, "3": true, "5": true };
     let res = $DC.BrandesDCmain(graph, targets);
-    console.log(res);
-    //$DC.BrandesDCmain(graph);
+    logger.log(res);
+    // $DC.BrandesDCmain(graph);
   });
+
 });

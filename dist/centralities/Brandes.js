@@ -1,58 +1,39 @@
+"use strict";
 /// <reference path="../../typings/tsd.d.ts" />
-
-/**
- * Previous version created by ru on 14.09.17 is to be found below. 
- * Modifications by Rita on 28.02.2018 - now it can handle branchings too. 
- * CONTENTS: 
- * Brandes: according to Brandes 2001, it is meant for unweighted graphs (+undirected according to the paper, but runs fine on directed ones, too)
- * BrandesForWeighted: according to Brandes 2007, handles WEIGHTED graphs, including graphs with null edges
- * PFSdictBased: an alternative for our PFS, not heap based but dictionary based, however, not faster (see BetweennessTests)
- */
-
-import * as $G from '../core/Graph';
-import * as $N from '../core/Nodes';
-import * as $P from '../search/PFS';
-import * as $BF from '../search/BellmanFord';
-import * as $JO from '../search/Johnsons';
-import * as $SU from '../utils/structUtils';
-import * as $BH from '../datastructs/binaryHeap';
-
-import {Logger} from '../../src/utils/logger';
-const logger = new Logger();
-
-
+Object.defineProperty(exports, "__esModule", { value: true });
+const $N = require("../core/Nodes");
+const $P = require("../search/PFS");
+const $BF = require("../search/BellmanFord");
+const $JO = require("../search/Johnsons");
+const $BH = require("../datastructs/binaryHeap");
+const logger_1 = require("../../src/utils/logger");
+const logger = new logger_1.Logger();
 /**
  * @param graph input graph
  * @returns Dict of betweenness centrality values for each node
  * @constructor
  */
-
-
-function BrandesUnweighted(graph: $G.IGraph, normalize: boolean = false, directed: boolean = false): {} {
-
+function BrandesUnweighted(graph, normalize = false, directed = false) {
     if (graph.nrDirEdges() === 0 && graph.nrUndEdges() === 0) {
         throw new Error("Cowardly refusing to traverse graph without edges.");
     }
-
     let nodes = graph.getNodes();
     let adjList = graph.adjListDict();
-
     //Variables for Brandes algorithm
-    let s: $N.IBaseNode,     //source node
-        v: string,          //parent of w, at least one shortest path between s and w leads through v
-        w: string,         //neighbour of v, lies one edge further than v from s
-        Pred: { [key: string]: string[] } = {},     //list of Predecessors=parent nodes
-        sigma: { [key: string]: number } = {},      //number of shortest paths from source s to each node as goal node
-        delta: { [key: string]: number } = {},      //dependency of source node s on a node 
-        dist: { [key: string]: number } = {},       //distances from source node s to each node
-        Q: string[] = [],     //Queue of nodes - nodes to visit
-        S: string[] = [],     //stack of nodes - nodes waiting for their dependency values
-        CB: { [key: string]: number } = {};    //Betweenness values for each node
+    let s, //source node
+    v, //parent of w, at least one shortest path between s and w leads through v
+    w, //neighbour of v, lies one edge further than v from s
+    Pred = {}, //list of Predecessors=parent nodes
+    sigma = {}, //number of shortest paths from source s to each node as goal node
+    delta = {}, //dependency of source node s on a node 
+    dist = {}, //distances from source node s to each node
+    Q = [], //Queue of nodes - nodes to visit
+    S = [], //stack of nodes - nodes waiting for their dependency values
+    CB = {}; //Betweenness values for each node
     //info: push element to array - last position
     //array.shift: returns and removes the first element - when used, array behaves as queue
     //array.pop: returns and removes last element - when used, array behaves as stack
-    let closedNodes: { [key: string]: boolean } = {};
-
+    let closedNodes = {};
     for (let n in nodes) {
         let node_id = nodes[n].getID();
         CB[node_id] = 0;
@@ -62,31 +43,24 @@ function BrandesUnweighted(graph: $G.IGraph, normalize: boolean = false, directe
         Pred[node_id] = [];
         closedNodes[node_id] = false;
     }
-
     for (let i in nodes) {
         s = nodes[i];
-
         //Initialization
         let id = s.getID();
         dist[id] = 0;
         sigma[id] = 1;
         Q.push(id);
         closedNodes[id] = true;
-
         let counter = 0;
-
         while (Q.length) { //Queue not empty
             v = Q.shift();
             S.push(v);
             let neighbors = adjList[v];
             closedNodes[v] = true;
-
             for (let w in neighbors) {
-
                 if (closedNodes[w]) {
                     continue;
                 }
-
                 //Path discovery: w found for the first time?
                 if (dist[w] === Number.POSITIVE_INFINITY) {
                     Q.push(w);
@@ -108,7 +82,6 @@ function BrandesUnweighted(graph: $G.IGraph, normalize: boolean = false, directe
             if (w != s.getID()) {
                 CB[w] += delta[w];
             }
-
             // This spares us from having to loop over all nodes again for initialization
             sigma[w] = 0;
             delta[w] = 0;
@@ -117,76 +90,51 @@ function BrandesUnweighted(graph: $G.IGraph, normalize: boolean = false, directe
             closedNodes[w] = false;
         }
     }
-
     if (normalize) {
         normalizeScores(CB, graph.nrNodes(), directed);
     }
     return CB;
 }
-
-
-
-export interface BrandesHeapEntry {
-    id: string;
-    best: number;
-}
-
+exports.BrandesUnweighted = BrandesUnweighted;
 //some inputs have the type any so a "false" could be entered for them
-function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean, sources?: any, scoreLogic?: any, returnMore?: boolean, BCdict?: {}): {} {
-
+function BrandesWeighted(graph, normalize, directed, sources, scoreLogic, returnMore, BCdict) {
     if (graph.nrDirEdges() === 0 && graph.nrUndEdges() === 0) {
         throw new Error("Cowardly refusing to traverse graph without edges.");
     }
-
     if (graph.hasNegativeEdge()) {
-        var extraNode: $N.IBaseNode = new $N.BaseNode("extraNode");
+        var extraNode = new $N.BaseNode("extraNode");
         graph = $JO.addExtraNandE(graph, extraNode);
         let BFresult = $BF.BellmanFordDict(graph, extraNode);
-
         if (BFresult.neg_cycle) {
             throw new Error("The graph contains a negative cycle, thus it can not be processed");
         }
         else {
-            let newWeights: {} = BFresult.distances;
-
+            let newWeights = BFresult.distances;
             graph = $JO.reWeighGraph(graph, newWeights, extraNode);
             graph.deleteNode(extraNode);
         }
     }
-
     let nodes = graph.getNodes();
     let nodeKeys = Object.keys(nodes);
     let N = nodeKeys.length;
     let adjList = graph.adjListDict();
-
-    const evalPriority = (nb: BrandesHeapEntry) => nb.best;
-    const evalObjID = (nb: BrandesHeapEntry) => nb.id;
-
+    const evalPriority = (nb) => nb.best;
+    const evalObjID = (nb) => nb.id;
     //Variables for Brandes algorithm
-    let s: $N.IBaseNode,     //source node, 
-        v: BrandesHeapEntry,    //parent of w, at least one shortest path between s and w leads through v
-        w: string,     //neighbour of v, lies one edge further than v from s, type is nodeID, alias string (got from AdjListDict)
-
-        Pred: { [key: string]: string[] } = {},     //list of Predecessors=parent nodes
-        sigma: { [key: string]: number } = {}, //number of shortest paths from source s to each node as goal node
-        delta: { [key: string]: number } = {}, //dependency of source node s on a node 
-        dist: { [key: string]: number } = {},  //distances from source node s to each node
-        S: string[] = [],     //stack of nodeIDs - nodes waiting for their dependency values
-        //if an existing BCdict is given as parameter, then work with that
-        CB: { [key: string]: number } = BCdict ? BCdict : {},  //Betweenness values for each node
-        closedNodes: { [key: string]: boolean } = {},
-        bigDist: {} = {},
-        bigPred: {} = {},
-        bigDelta: {} = {},
-        bigSigma: {} = {},
-        Q: $BH.BinaryHeap = new $BH.BinaryHeap($BH.BinaryHeapMode.MIN, evalPriority, evalObjID);
-
-    let sourceIDs: string[] = sources ? sources : nodeKeys;
-
+    let s, //source node, 
+    v, //parent of w, at least one shortest path between s and w leads through v
+    w, //neighbour of v, lies one edge further than v from s, type is nodeID, alias string (got from AdjListDict)
+    Pred = {}, //list of Predecessors=parent nodes
+    sigma = {}, //number of shortest paths from source s to each node as goal node
+    delta = {}, //dependency of source node s on a node 
+    dist = {}, //distances from source node s to each node
+    S = [], //stack of nodeIDs - nodes waiting for their dependency values
+    //if an existing BCdict is given as parameter, then work with that
+    CB = BCdict ? BCdict : {}, //Betweenness values for each node
+    closedNodes = {}, bigDist = {}, bigPred = {}, bigDelta = {}, bigSigma = {}, Q = new $BH.BinaryHeap($BH.BinaryHeapMode.MIN, evalPriority, evalObjID);
+    let sourceIDs = sources ? sources : nodeKeys;
     logger.log(nodeKeys);
-
     for (let i of sourceIDs) {
-
         for (let n in nodes) {
             let currID = nodes[n].getID();
             //initialize it only if this node is not yet in
@@ -199,33 +147,25 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
             Pred[currID] = [];
             closedNodes[currID] = false;
         }
-
         s = nodes[i];
         let id_s = s.getID();
         dist[id_s] = 0;
         sigma[id_s] = 1;
-
-        let source: BrandesHeapEntry = { id: id_s, best: 0 };
+        let source = { id: id_s, best: 0 };
         Q.insert(source);
         closedNodes[id_s] = true;
-
         while (Q.size() > 0) {
-
             v = Q.pop();
             let current_id = v.id;
-
             S.push(current_id);
             closedNodes[current_id] = true;
-
             let neighbors = adjList[current_id];
             for (let w in neighbors) {
-
                 if (closedNodes[w]) {
                     continue;
                 }
-
                 let new_dist = dist[current_id] + neighbors[w];
-                let nextNode: BrandesHeapEntry = { id: w, best: dist[w] };
+                let nextNode = { id: w, best: dist[w] };
                 if (dist[w] > new_dist) {
                     if (isFinite(dist[w])) { //this means the node has already been encountered
                         let x = Q.remove(nextNode);
@@ -240,19 +180,15 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
                     dist[w] = new_dist;
                     Pred[w] = [];
                 }
-
                 if (dist[w] === new_dist) {
                     sigma[w] += sigma[current_id];
                     Pred[w].push(current_id);
                 }
             }
         }
-
         // Accumulation: back-propagation of dependencies
-        let scoring: Function = scoreLogic ? scoreLogic : defaultScoring;
-
+        let scoring = scoreLogic ? scoreLogic : defaultScoring;
         scoring(i, S, graph, sigma, delta, dist, Pred, closedNodes, CB);
-
         if (returnMore) {
             bigDist[i] = dist;
             bigPred[i] = Pred;
@@ -260,17 +196,14 @@ function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean
             bigSigma[i] = sigma;
         }
     }
-
     if (normalize) {
         normalizeScores(CB, N, directed);
     }
-
-    let returnObj: {} = returnMore ? { CB, bigDist, bigPred, bigDelta, bigSigma } : CB;
-
+    let returnObj = returnMore ? { CB, bigDist, bigPred, bigDelta, bigSigma } : CB;
     return returnObj;
 }
-
-function defaultScoring(sID: string, S: string[], graph: $G.IGraph, sigma: {}, delta: {}, dist: {}, Pred: {}, closedNodes: {}, CB: {}): void {
+exports.BrandesWeighted = BrandesWeighted;
+function defaultScoring(sID, S, graph, sigma, delta, dist, Pred, closedNodes, CB) {
     let s = graph.getNodeById(sID);
     while (S.length >= 1) {
         let w = S.pop();
@@ -282,26 +215,23 @@ function defaultScoring(sID: string, S: string[], graph: $G.IGraph, sigma: {}, d
         }
     }
 }
-
 /**
- * 
- * @param graph 
- * @param normalize 
+ *
+ * @param graph
+ * @param normalize
  * @param directed - needed for normalization
- * 
+ *
  * @todo decide to remove or not
  */
-function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean): {} {
+function BrandesPFSbased(graph, normalize, directed) {
     let nodes = graph.getNodes();
     let adjList = graph.adjListDict();
-
     //Variables for Brandes algorithm
-    let Pred: { [key: string]: string[] } = {},     //list of Predecessors=parent nodes
-        sigma: { [key: string]: number } = {}, //number of shortest paths from source s to each node as goal node
-        delta: { [key: string]: number } = {}, //dependency of source node s on a node 
-        S: string[] = [],     //stack of nodeIDs - nodes waiting for their dependency values
-        CB: { [key: string]: number } = {};    //Betweenness values for each node
-
+    let Pred = {}, //list of Predecessors=parent nodes
+    sigma = {}, //number of shortest paths from source s to each node as goal node
+    delta = {}, //dependency of source node s on a node 
+    S = [], //stack of nodeIDs - nodes waiting for their dependency values
+    CB = {}; //Betweenness values for each node
     for (let n in nodes) {
         let currID = nodes[n].getID();
         CB[currID] = 0;
@@ -309,10 +239,8 @@ function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean
         delta[currID] = 0;
         Pred[currID] = [];
     }
-
-    let specialConfig: $P.PFS_Config = $P.preparePFSStandardConfig();
-
-    var notEncounteredBrandes = function (context: $P.PFS_Scope) {
+    let specialConfig = $P.preparePFSStandardConfig();
+    var notEncounteredBrandes = function (context) {
         context.next.best =
             context.current.best + (isNaN(context.next.edge.getWeight()) ? $P.DEFAULT_WEIGHT : context.next.edge.getWeight());
         //these needed for betweenness
@@ -320,16 +248,13 @@ function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean
         let current_id = context.current.node.getID();
         Pred[next_id] = [current_id];
         sigma[next_id] += sigma[current_id];
-
     };
     specialConfig.callbacks.not_encountered.splice(0, 1, notEncounteredBrandes);
-
-    var newCurrentBrandes = function (context: $P.PFS_Scope) {
+    var newCurrentBrandes = function (context) {
         S.push(context.current.node.getID());
     };
     specialConfig.callbacks.new_current.push(newCurrentBrandes);
-
-    var betterPathBrandes = function (context: $P.PFS_Scope) {
+    var betterPathBrandes = function (context) {
         let next_id = context.next.node.getID();
         let current_id = context.current.node.getID();
         sigma[next_id] = 0;
@@ -338,30 +263,25 @@ function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean
         Pred[next_id].push(current_id);
     };
     specialConfig.callbacks.better_path.splice(0, 1, betterPathBrandes);
-
     /**
-     * @param context 
-     * 
+     * @param context
+     *
      * @todo figure out a faster way than .indexOf()
      */
-    var equalPathBrandes = function (context: $P.PFS_Scope) {
+    var equalPathBrandes = function (context) {
         let next_id = context.next.node.getID();
         let current_id = context.current.node.getID();
-
         sigma[next_id] += sigma[current_id];
-
         //other approach needed to avoid duplicates
         if (Pred[next_id].indexOf(current_id) === -1) {
             Pred[next_id].push(current_id);
         }
     };
     specialConfig.callbacks.equal_path.push(equalPathBrandes);
-
     for (let i in nodes) {
         let s = nodes[i];
         sigma[s.getID()] = 1;
-        $P.PFS(graph, s, specialConfig)
-
+        $P.PFS(graph, s, specialConfig);
         //step: do the scoring, using S, Pred and sigma
         while (S.length >= 1) {
             let w = S.pop();
@@ -377,27 +297,16 @@ function BrandesPFSbased(graph: $G.IGraph, normalize: boolean, directed: boolean
             Pred[w] = [];
         }
     }
-
     if (normalize) {
         normalizeScores(CB, graph.nrNodes(), directed);
     }
-
     return CB;
 }
-
-
+exports.BrandesPFSbased = BrandesPFSbased;
 function normalizeScores(CB, N, directed) {
     let factor = directed ? ((N - 1) * (N - 2)) : ((N - 1) * (N - 2) / 2);
-
     for (let node in CB) {
         CB[node] /= factor;
     }
 }
-
-
-export {
-    BrandesUnweighted,
-    BrandesWeighted,
-    BrandesPFSbased,
-    normalizeScores
-}
+exports.normalizeScores = normalizeScores;

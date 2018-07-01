@@ -1,18 +1,24 @@
 {
     "compilerOptions": {
       "module": "commonjs",
-      "target": "es2017",
+      "target": "es2015",
       "lib": [
           "es2017",
           "dom"
       ],
-      "declaration": true,
+      "declaration": false,
       "sourceMap": true,
-      "outDir": "./dist"
+    //   "outDir": "./dist",
+      "removeComments": false,
+      "watch": false,
     },
     "compileOnSave": false,
     "include": [
         "./src/**/*.ts",
         "./test/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "coverage"
     ]
 }
