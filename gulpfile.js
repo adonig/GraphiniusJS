@@ -127,11 +127,6 @@ gulp.task('pack', ['dts'], function() {
 
 // Uglification...
 gulp.task('bundle', ['pack'], cb => {
-	// return gulp.src('build/graphinius.js')
-	// 	.pipe(uglify())
-	// 	.pipe(rename('graphinius.min.js'))
-	// 	.pipe(gulp.dest('build'));
-
 		pump( [
 						gulp.src('build/graphinius.js'),
 						uglify(),
@@ -153,53 +148,49 @@ const mocha_options = {
 	timeout: 60000
 };
 
-// 'Normal' synchronous tests
+
 gulp.task('test-core', function () {
 	return gulp.src(paths.tests_core, {read: false})
 						 .pipe(mocha( mocha_options ));
 });
 
 
-// 'Async tests - usually take a tad longer'
 gulp.task('test-async', function () {
 	return gulp.src(paths.tests_async, {read: false})
 						 .pipe(mocha( mocha_options ));
 });
 
 
-// 'Search tests - include Floyd Warshal and shortest paths'
 gulp.task('test-search', function () {
 	return gulp.src(paths.tests_search, {read: false})
 						 .pipe(mocha( mocha_options ));
 });
 
 
-// 'Perturbation tests - usually take a tad longer'
 gulp.task('test-perturb', function () {
 	return gulp.src(paths.tests_perturb, {read: false})
 						 .pipe(mocha( mocha_options ));
 });
 
-// 'Centrality tests'
+
 gulp.task('test-central', function () {
     return gulp.src(paths.tests_central, {read: false})
 						.pipe(mocha( mocha_options ));
 });
 
-// 'Boykov Energyminimization tests - including mincutmaxflow'
+
 gulp.task('test-eme', function () {
 	return gulp.src(paths.tests_eme, {read: false})
 						 .pipe(mocha( mocha_options ));
 });
 
-// 'Generators tests'
+
 gulp.task('test-generators', function () {
 	return gulp.src(paths.tests_generators, {read: false})
 						 .pipe(mocha( mocha_options ));
 });
 
 
-// 'ALL tests '
 gulp.task('test-all', function () {
 	return gulp.src(paths.tests_all, {read: false})
 						 .pipe(mocha( mocha_options ));
