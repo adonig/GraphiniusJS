@@ -22,8 +22,12 @@ let expect = chai.expect,
 const PATH_PREFIX = "./test/test_data/";
 let path_midSizeGraph = PATH_PREFIX + "bernd_ares_intermediate_pos.json";
 let path_search_pos = PATH_PREFIX + "search_graph_multiple_SPs_positive.json";
+let path_333 = PATH_PREFIX + "DCBrandes/inputs/graph_333_continuous.txt";
+let path_10 = PATH_PREFIX + "DCBrandes/inputs/graph_10.txt";
 let graph_midSizeGraph = json.readFromJSONFile(path_midSizeGraph);
 let graph_search_pos = json.readFromJSONFile(path_search_pos);
+let graph_333 = csv.readFromEdgeListFile(path_333);
+let graph_10 = csv.readFromEdgeListFile(path_10);
 
 describe('test divide and conquer', () => {
 
@@ -52,10 +56,10 @@ describe('test divide and conquer', () => {
   });
 
   it.only('check if BrandesDCmain runs', () => {
-    let graph = graph_midSizeGraph;
+    let graph = graph_10;
 
     let targets = { "1": true, "3": true, "5": true };
-    let res= $DC.BrandesDCmain(graph, targets);
+    let res = $DC.BrandesDCmain(graph, targets);
     console.log(res);
     //$DC.BrandesDCmain(graph);
   });

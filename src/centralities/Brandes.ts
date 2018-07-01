@@ -128,7 +128,8 @@ export interface BrandesHeapEntry {
     best: number;
 }
 
-function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean, sources?: string[], scoreLogic?: Function, returnMore?: boolean, BCdict?: {}): {} {
+//some inputs have the type any so a "false" could be entered for them
+function BrandesWeighted(graph: $G.IGraph, normalize: boolean, directed: boolean, sources?: any, scoreLogic?: any, returnMore?: boolean, BCdict?: {}): {} {
 
     if (graph.nrDirEdges() === 0 && graph.nrUndEdges() === 0) {
         throw new Error("Cowardly refusing to traverse graph without edges.");
