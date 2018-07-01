@@ -101,8 +101,8 @@ class CSVInput implements ICSVInput {
 		var input = fs.readFileSync(filepath).toString().split('\n');
 		return func.apply(this, [input, graph_name]);
 	}
-			
-	
+
+
 	readFromAdjacencyList(input : Array<string>, graph_name : string) : $G.IGraph {
 		
 		var graph = new $G.BaseGraph(graph_name);
